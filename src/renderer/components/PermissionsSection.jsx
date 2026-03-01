@@ -46,7 +46,15 @@ export default function PermissionsSection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Permissions</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Permissions</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Choose which tools your AI can and cannot use.'
+            : 'Manage tool-level allow/deny lists for fine-grained access control.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       {mode === 'eli5' && (
         <div className="glass-card p-4 mb-6 border-blue-500/20">

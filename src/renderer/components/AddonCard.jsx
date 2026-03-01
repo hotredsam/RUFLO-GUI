@@ -4,13 +4,22 @@ export default function AddonCard({ addon, mode, isInstalled, onInstalled }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
+  const [installError, setInstallError] = useState(false);
+
   const handleInstall = async (e) => {
     e.stopPropagation();
     setIsLoading(true);
+    setInstallError(false);
     try {
-      await window.electronAPI.installAddon(addon.installCommand);
-      onInstalled();
+      const result = await window.electronAPI.installAddon(addon.installCommand);
+      if (result && result.success) {
+        onInstalled();
+      } else {
+        setInstallError(true);
+        console.error('Failed to install addon:', result?.error || 'Unknown error');
+      }
     } catch (error) {
+      setInstallError(true);
       console.error('Failed to install addon:', error);
     } finally {
       setIsLoading(false);
@@ -75,10 +84,12 @@ export default function AddonCard({ addon, mode, isInstalled, onInstalled }) {
               ? 'bg-green-500/20 text-green-300 cursor-default'
               : isLoading
               ? 'bg-accent/50 text-white cursor-wait'
+              : installError
+              ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
               : 'btn-primary hover:bg-accent-hover'
           }`}
         >
-          {isInstalled ? 'Installed' : isLoading ? 'Installing...' : 'Install'}
+          {isInstalled ? 'Installed' : isLoading ? 'Installing...' : installError ? 'Failed — Retry' : 'Install'}
         </button>
       </div>
     </div>

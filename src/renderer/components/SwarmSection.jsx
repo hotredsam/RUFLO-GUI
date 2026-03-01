@@ -14,7 +14,15 @@ export default function SwarmSection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Swarm & Agents Configuration</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Swarm & Agents</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Set up teams of AI agents to work together on big tasks.'
+            : 'Configure multi-agent swarm topology, coordination modes, and team orchestration.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       <div className="space-y-6">
         <div className="glass-card p-6">

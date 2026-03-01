@@ -29,7 +29,7 @@ describe('SecuritySection', () => {
       />
     );
 
-    expect(screen.getByText('Security Configuration')).toBeInTheDocument();
+    expect(screen.getByText('Security')).toBeInTheDocument();
   });
 
   it('shows security level options', () => {

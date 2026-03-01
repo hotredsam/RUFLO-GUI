@@ -67,7 +67,7 @@ describe('AddonCard', () => {
   });
 
   it('calls onInstall when install button is clicked', async () => {
-    mockElectronAPI.installAddon.mockResolvedValue(true);
+    mockElectronAPI.installAddon.mockResolvedValue({ success: true });
 
     render(
       <AddonCard
@@ -89,7 +89,7 @@ describe('AddonCard', () => {
   });
 
   it('calls onInstalled callback when install succeeds', async () => {
-    mockElectronAPI.installAddon.mockResolvedValue(true);
+    mockElectronAPI.installAddon.mockResolvedValue({ success: true });
 
     render(
       <AddonCard
@@ -183,7 +183,7 @@ describe('AddonCard', () => {
 
   it('shows install loading state when installing', async () => {
     mockElectronAPI.installAddon.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve(true), 100))
+      () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100))
     );
 
     render(
@@ -205,7 +205,7 @@ describe('AddonCard', () => {
 
   it('disables install button during installation', async () => {
     mockElectronAPI.installAddon.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve(true), 100))
+      () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100))
     );
 
     render(
@@ -350,7 +350,7 @@ describe('AddonCard', () => {
   });
 
   it('stops propagation when install button is clicked', () => {
-    mockElectronAPI.installAddon.mockResolvedValue(true);
+    mockElectronAPI.installAddon.mockResolvedValue({ success: true });
 
     render(
       <AddonCard

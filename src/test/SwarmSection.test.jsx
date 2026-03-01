@@ -31,7 +31,7 @@ describe('SwarmSection', () => {
 
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toBe('Swarm & Agents Configuration');
+    expect(heading.textContent).toBe('Swarm & Agents');
   });
 
   it('shows swarm controls', () => {

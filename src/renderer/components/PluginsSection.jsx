@@ -5,12 +5,21 @@ export default function PluginsSection({ settings, mode }) {
   const [installingPack, setInstallingPack] = useState(null);
   const [installedPacks, setInstalledPacks] = useState(settings.plugins?.installed || []);
 
+  const [installError, setInstallError] = useState(null);
+
   const handleInstall = async (pack) => {
     setInstallingPack(pack.id);
+    setInstallError(null);
     try {
-      await window.electronAPI.installAddon(pack.installCommand);
-      setInstalledPacks((prev) => [...prev, pack.id]);
+      const result = await window.electronAPI.installAddon(pack.installCommand);
+      if (result && result.success) {
+        setInstalledPacks((prev) => [...prev, pack.id]);
+      } else {
+        setInstallError(pack.id);
+        console.error('Failed to install pack:', result?.error || 'Unknown error');
+      }
     } catch (error) {
+      setInstallError(pack.id);
       console.error('Failed to install pack:', error);
     } finally {
       setInstallingPack(null);
@@ -64,10 +73,12 @@ export default function PluginsSection({ settings, mode }) {
                           ? 'bg-green-500/20 text-green-300 cursor-default'
                           : isInstalling
                           ? 'bg-accent/50 text-white cursor-wait'
+                          : installError === pack.id
+                          ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
                           : 'btn-primary hover:bg-accent-hover'
                       }`}
                     >
-                      {isInstalled ? 'Installed' : isInstalling ? 'Installing...' : 'Install Pack'}
+                      {isInstalled ? 'Installed' : isInstalling ? 'Installing...' : installError === pack.id ? 'Failed — Retry' : 'Install Pack'}
                     </button>
                   </div>
                 </div>
@@ -115,10 +126,12 @@ export default function PluginsSection({ settings, mode }) {
                     ? 'bg-green-500/20 text-green-300 cursor-default'
                     : isInstalling
                     ? 'bg-accent/50 text-white cursor-wait'
+                    : installError === pack.id
+                    ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
                     : 'btn-primary hover:bg-accent-hover'
                 }`}
               >
-                {isInstalled ? 'Installed' : isInstalling ? 'Installing...' : 'Install Pack'}
+                {isInstalled ? 'Installed' : isInstalling ? 'Installing...' : installError === pack.id ? 'Failed — Retry' : 'Install Pack'}
               </button>
             </div>
           );

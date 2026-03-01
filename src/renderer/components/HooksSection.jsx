@@ -42,7 +42,15 @@ export default function HooksSection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Hooks Configuration</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Hooks</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Run custom scripts automatically before or after AI actions.'
+            : 'Configure lifecycle hooks for tool invocations, notifications, and process events.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       <div className="space-y-6">
         {HOOK_TYPES.map((hookType) => {

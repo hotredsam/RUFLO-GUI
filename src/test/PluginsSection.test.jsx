@@ -22,7 +22,7 @@ describe('PluginsSection', () => {
   beforeEach(() => {
     setupMocks();
     window.electronAPI.installAddon.mockClear();
-    window.electronAPI.installAddon.mockResolvedValue(true);
+    window.electronAPI.installAddon.mockResolvedValue({ success: true });
   });
 
   it('renders Plugin Packs heading', () => {

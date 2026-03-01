@@ -7,7 +7,15 @@ export default function MemorySection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Memory & Learning Configuration</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Memory & Learning</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Control how your AI remembers things between sessions.'
+            : 'Configure persistence backend, vector search, retention policies, and auto-consolidation.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       <div className="space-y-6">
         <div className="glass-card p-6">

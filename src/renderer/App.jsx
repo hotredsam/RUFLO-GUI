@@ -24,7 +24,13 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState('saved');
   const [lastSaved, setLastSaved] = useState(null);
   const [settingsPath, setSettingsPath] = useState('');
-  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('ruflo-theme') || DEFAULT_THEME;
+    } catch {
+      return DEFAULT_THEME;
+    }
+  });
 
   const saveTimeoutRef = useRef(null);
   const hasInitialLoadRef = useRef(false);
@@ -62,9 +68,12 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Apply theme whenever it changes
+  // Apply and persist theme whenever it changes
   useEffect(() => {
     applyTheme(theme);
+    try {
+      localStorage.setItem('ruflo-theme', theme);
+    } catch { /* ignore */ }
   }, [theme]);
 
   // Auto-save with debounce

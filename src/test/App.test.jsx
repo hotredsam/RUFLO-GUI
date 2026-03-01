@@ -150,7 +150,7 @@ describe('App', () => {
 
   it('saves settings when they change', async () => {
     mockElectronAPI.writeSettings.mockClear();
-    const { container } = render(<App />);
+    render(<App />);
 
     await waitFor(() => {
       expect(mockElectronAPI.readSettings).toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe('App', () => {
 
     // The settings are loaded as an external update, so no save is triggered on mount
     // Verify that the component is properly set up to handle settings changes
-    expect(container.querySelector('main')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
 
     // If settings were to change (through updateSetting callback passed to components),
     // the auto-save mechanism would trigger after 500ms debounce
@@ -223,16 +223,15 @@ describe('App', () => {
   });
 
   it('displays status bar with save status', async () => {
-    const { container } = render(<App />);
+    render(<App />);
 
     await waitFor(() => {
       expect(screen.queryByText(/Loading settings/i)).not.toBeInTheDocument();
     });
 
     // Status bar should exist and show save status text
-    // Use getAllByText to get the first match since "Saved" appears in both the status and "Last saved" text
-    const savedElements = screen.getAllByText(/Saved/i);
-    expect(savedElements.length).toBeGreaterThan(0);
+    // The StatusBar component displays the save status (e.g., "Saved", "Saving...", etc.)
+    expect(screen.getByText(/Saved/)).toBeInTheDocument();
   });
 
   it('updates save status to saved after successful write', async () => {
@@ -246,10 +245,7 @@ describe('App', () => {
 
     // Initial load sets saveStatus to 'saved' via the loadSettings function
     // Verify that the save status indicator is present after loading
-    await waitFor(() => {
-      const savedElements = screen.getAllByText(/Saved/i);
-      expect(savedElements.length).toBeGreaterThan(0);
-    });
+    expect(screen.getByText(/Saved/)).toBeInTheDocument();
   });
 
   it('updates save status to error on write failure', async () => {
@@ -359,17 +355,18 @@ describe('App', () => {
 
   it('properly initializes refs for tracking state', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { container } = render(<App />);
+    render(<App />);
 
     await waitFor(() => {
       expect(mockElectronAPI.readSettings).toHaveBeenCalled();
     });
 
-    // Refs should be properly initialized - verify no console errors occurred
-    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('ref'), expect.anything());
+    // Refs should be properly initialized - main content area should be rendered
+    expect(screen.getByRole('main')).toBeInTheDocument();
 
-    // Main content area should be rendered, indicating refs are working
-    expect(container.querySelector('main')).toBeInTheDocument();
+    // Verify no console errors related to refs occurred during component initialization
+    // (The spy won't catch 100% of ref errors, but this basic check ensures no major issues)
+    expect(consoleSpy).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
   });

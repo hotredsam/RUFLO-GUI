@@ -21,7 +21,15 @@ export default function SecuritySection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Security Configuration</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Security</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Keep your code and data safe with security checks.'
+            : 'Configure security levels, vulnerability scanning, CVE checking, and audit logging.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       <div className="space-y-6">
         <div className="glass-card p-6">

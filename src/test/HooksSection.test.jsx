@@ -31,7 +31,7 @@ describe('HooksSection', () => {
 
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toBe('Hooks Configuration');
+    expect(heading.textContent).toBe('Hooks');
   });
 
   it('shows hook configuration options when hooks exist', () => {

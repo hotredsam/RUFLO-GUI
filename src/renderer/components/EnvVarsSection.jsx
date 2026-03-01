@@ -26,7 +26,15 @@ export default function EnvVarsSection({ settings, mode, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8">Environment Variables</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Environment Variables</h2>
+        <p className="text-slate-400 text-sm">
+          {mode === 'eli5'
+            ? 'Set API keys and configuration values that your AI tools need.'
+            : 'Manage environment variables injected into agent and tool execution contexts.'}
+        </p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
+      </div>
 
       <div className="space-y-6">
         {envSettings.map((setting) => {

@@ -31,7 +31,7 @@ describe('MemorySection', () => {
 
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toBe('Memory & Learning Configuration');
+    expect(heading.textContent).toBe('Memory & Learning');
   });
 
   it('shows memory backend selector', () => {
