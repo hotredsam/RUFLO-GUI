@@ -120,7 +120,7 @@ export default function HooksSection({ settings, mode, onUpdate }) {
           );
         })}
 
-        <div className="glass-card p-6 border-purple-500/20">
+        <div className="glass-card p-6 border-accent/20">
           <h3 className="text-slate-200 font-medium mb-4">Add New Hook</h3>
           <div className="space-y-3">
             <div>

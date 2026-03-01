@@ -33,7 +33,7 @@ export default function AddonsMarketplace({ settings, mode }) {
     <div className="p-8 overflow-y-auto">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-100 mb-3">Add-ons Marketplace</h2>
-        <div className="h-0.5 w-16 bg-gradient-to-r from-purple-500 to-transparent rounded-full"></div>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full"></div>
       </div>
 
       <div className="mb-8 glass-card p-4 flex items-center gap-3">
@@ -56,7 +56,7 @@ export default function AddonsMarketplace({ settings, mode }) {
               onClick={() => setSelectedCategory(category)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${
                 selectedCategory === category
-                  ? 'bg-purple-500 text-white'
+                  ? 'bg-accent text-white'
                   : 'bg-slate-700/30 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50'
               }`}
             >

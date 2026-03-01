@@ -45,7 +45,7 @@ export default function StatusBar({ settingsPath, saveStatus, mode, lastSaved })
         <span className={`px-3 py-1 rounded text-xs font-semibold transition ${
           mode === 'eli5'
             ? 'bg-blue-500/20 text-blue-300'
-            : 'bg-purple-500/20 text-purple-300'
+            : 'bg-accent/20 text-accent-med'
         }`}>
           {mode === 'eli5' ? 'ELI5 Mode' : 'Complex Mode'}
         </span>

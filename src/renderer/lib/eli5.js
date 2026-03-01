@@ -283,6 +283,231 @@ const SETTINGS_META = {
     type: 'toggle',
     section: 'memory',
     defaultValue: true
+  },
+
+  // === Claude Code Features ===
+  'apiProvider': {
+    label: 'API Provider',
+    eli5: 'Where to send AI requests: directly to Anthropic, through Amazon (Bedrock), or Google (Vertex).',
+    complex: 'API routing provider: direct Anthropic API, AWS Bedrock for enterprise AWS integration, or Google Vertex AI for GCP deployments.',
+    type: 'select',
+    options: ['anthropic', 'bedrock', 'vertex'],
+    section: 'general',
+    defaultValue: 'anthropic'
+  },
+  'contextWindow': {
+    label: 'Context Window Size',
+    eli5: 'How much conversation the AI can remember at once. Bigger = more context but costs more.',
+    complex: 'Maximum context window size in tokens. Determines how much conversation history and code context the model can process per request.',
+    type: 'select',
+    options: ['32000', '64000', '128000', '200000'],
+    section: 'general',
+    defaultValue: '128000'
+  },
+  'autoCompact': {
+    label: 'Auto Context Compaction',
+    eli5: 'Automatically shrink old messages when the conversation gets too long.',
+    complex: 'Enables automatic conversation compaction when approaching context window limits. Summarizes older messages to preserve recent context.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+  'promptCaching': {
+    label: 'Prompt Caching',
+    eli5: 'Cache repeated parts of prompts to save money and speed things up.',
+    complex: 'Enables Anthropic prompt caching to reduce API costs by caching static prompt prefixes. Can reduce costs by up to 90% for repeated contexts.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+  'webSearchEnabled': {
+    label: 'Enable Web Search',
+    eli5: 'Let the AI search the internet to find up-to-date information.',
+    complex: 'Enables real-time web search capability for accessing information beyond the model training cutoff date.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+  'theme': {
+    label: 'Theme',
+    eli5: 'Choose how the interface looks: dark mode or light mode.',
+    complex: 'UI theme preference. Dark theme optimized for low-light environments, light theme for high-ambient-light conditions.',
+    type: 'select',
+    options: ['dark', 'light', 'system'],
+    section: 'general',
+    defaultValue: 'dark'
+  },
+  'telemetryEnabled': {
+    label: 'Telemetry',
+    eli5: 'Send anonymous usage data to help improve the product.',
+    complex: 'Controls anonymous telemetry data collection for product improvement. No personal data or code content is transmitted.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+  'autoUpdates': {
+    label: 'Auto Updates',
+    eli5: 'Automatically download and install updates.',
+    complex: 'Enables automatic update checking and installation for Claude Code and ruflo components.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+  'terminalIntegration': {
+    label: 'Terminal Integration',
+    eli5: 'Integrate with your terminal for a seamless coding experience.',
+    complex: 'Enables terminal shell integration for inline completions, command suggestions, and context-aware terminal operations.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
+  },
+
+  // === Model Routing ===
+  'modelRouting.planningModel': {
+    label: 'Planning Model',
+    eli5: 'The smartest model used for planning and architecture (costs more but thinks better).',
+    complex: 'Model assigned to planning, architecture design, and complex reasoning tasks. Should be highest-capability tier.',
+    type: 'select',
+    options: ['claude-opus-4-6', 'gpt-4', 'gemini-ultra'],
+    section: 'general',
+    defaultValue: 'claude-opus-4-6'
+  },
+  'modelRouting.codingModel': {
+    label: 'Coding Model',
+    eli5: 'The everyday model used for writing and fixing code.',
+    complex: 'Model assigned to code generation, bug fixing, and moderate-complexity development tasks. Balanced cost/capability.',
+    type: 'select',
+    options: ['claude-sonnet-4-6', 'gpt-4-turbo', 'gemini-pro'],
+    section: 'general',
+    defaultValue: 'claude-sonnet-4-6'
+  },
+  'modelRouting.reviewModel': {
+    label: 'Review Model',
+    eli5: 'The model that checks your code for bugs and improvements.',
+    complex: 'Model assigned to code review, security analysis, and quality assessment tasks.',
+    type: 'select',
+    options: ['claude-sonnet-4-6', 'claude-opus-4-6', 'gpt-4-turbo'],
+    section: 'general',
+    defaultValue: 'claude-sonnet-4-6'
+  },
+  'modelRouting.boilerplateModel': {
+    label: 'Boilerplate Model',
+    eli5: 'The cheapest, fastest model for simple repetitive code.',
+    complex: 'Model assigned to boilerplate generation, formatting, and trivial code operations. Optimized for throughput and cost.',
+    type: 'select',
+    options: ['claude-haiku-4-5', 'gpt-3.5-turbo', 'gemini-flash'],
+    section: 'general',
+    defaultValue: 'claude-haiku-4-5'
+  },
+
+  // === Ruflo Swarm Extensions ===
+  'swarm.agentTypes': {
+    label: 'Available Agent Types',
+    eli5: 'The different kinds of helper agents available in your swarm.',
+    complex: 'Configurable list of agent types available for spawning. Includes general-purpose, Explore, Plan, Bash, code-reviewer, security-reviewer, tdd-guide, etc.',
+    type: 'list',
+    section: 'swarm',
+    defaultValue: ['general-purpose', 'Explore', 'Plan', 'Bash', 'code-reviewer', 'security-reviewer', 'tdd-guide']
+  },
+  'swarm.planModeRequired': {
+    label: 'Require Plan Approval',
+    eli5: 'Make agents create a plan and get your approval before coding.',
+    complex: 'When enabled, spawned agents must operate in plan mode and receive approval before executing implementation changes.',
+    type: 'toggle',
+    section: 'swarm',
+    defaultValue: false
+  },
+  'swarm.delegateMode': {
+    label: 'Agent Delegate Mode',
+    eli5: 'Let agents pass tasks to other agents when they need help.',
+    complex: 'Enables agent delegation where agents can spawn sub-agents or reassign tasks based on specialization requirements.',
+    type: 'toggle',
+    section: 'swarm',
+    defaultValue: true
+  },
+
+  // === Ruflo Memory Extensions ===
+  'memory.vectorDimension': {
+    label: 'Vector Dimension',
+    eli5: 'Size of the numbers used to represent memories (bigger = more detail but slower).',
+    complex: 'Dimensionality of embedding vectors for HNSW index. Higher dimensions capture more semantic detail but increase storage and computation.',
+    type: 'select',
+    options: ['256', '512', '768', '1024', '1536'],
+    section: 'memory',
+    defaultValue: '768'
+  },
+  'memory.embeddingModel': {
+    label: 'Embedding Model',
+    eli5: 'The model that converts text into searchable numbers for memory.',
+    complex: 'Model used for generating vector embeddings from text content for semantic similarity search.',
+    type: 'select',
+    options: ['text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'],
+    section: 'memory',
+    defaultValue: 'text-embedding-3-small'
+  },
+  'memory.autoLearn': {
+    label: 'Auto Learning',
+    eli5: 'Automatically learn patterns from your interactions to get smarter.',
+    complex: 'Enables automatic pattern extraction and instinct learning from completed interactions using continuous learning algorithms.',
+    type: 'toggle',
+    section: 'memory',
+    defaultValue: true
+  },
+
+  // === Ruflo Hook Extensions ===
+  'hooks.PrePromptSubmit': {
+    label: 'Pre-Prompt Submit Hook',
+    eli5: 'A command that runs before your message is sent to the AI.',
+    complex: 'Shell command executed before user prompts are submitted. Can modify, validate, or block prompt submission.',
+    type: 'text',
+    section: 'hooks',
+    defaultValue: ''
+  },
+  'hooks.PostPromptSubmit': {
+    label: 'Post-Prompt Submit Hook',
+    eli5: 'A command that runs after your message is sent to the AI.',
+    complex: 'Shell command executed after prompt submission. Useful for logging, analytics, or triggering dependent workflows.',
+    type: 'text',
+    section: 'hooks',
+    defaultValue: ''
+  },
+
+  // === Ruflo Security Extensions ===
+  'security.sandboxMode': {
+    label: 'Sandbox Mode',
+    eli5: 'Run code in a protected sandbox so it can\'t affect your real files.',
+    complex: 'Enables process-level sandboxing with syscall filtering, filesystem restrictions, and network isolation for safe code execution.',
+    type: 'select',
+    options: ['off', 'permissive', 'strict'],
+    section: 'security',
+    defaultValue: 'permissive'
+  },
+  'security.allowedDomains': {
+    label: 'Allowed Network Domains',
+    eli5: 'Which websites and APIs the AI is allowed to connect to.',
+    complex: 'Whitelist of domains for network egress. Restricts outbound connections to specified domains for security compliance.',
+    type: 'list',
+    section: 'security',
+    defaultValue: ['api.anthropic.com', 'api.openai.com', 'github.com', 'registry.npmjs.org']
+  },
+  'security.networkRestrictions': {
+    label: 'Network Restriction Level',
+    eli5: 'How strictly to control internet access: none, moderate, or full lockdown.',
+    complex: 'Network restriction level: none (all traffic allowed), moderate (domain whitelist), strict (air-gapped, no external connections).',
+    type: 'select',
+    options: ['none', 'moderate', 'strict'],
+    section: 'security',
+    defaultValue: 'none'
+  },
+
+  // === MCP Configuration ===
+  'mcpServers.enabled': {
+    label: 'Enable MCP Servers',
+    eli5: 'Turn on the ability to connect external tool servers.',
+    complex: 'Enables Model Context Protocol server connections for extending agent capabilities with external tools and services.',
+    type: 'toggle',
+    section: 'general',
+    defaultValue: true
   }
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import ModeToggle from './ModeToggle';
+import ThemeSelector from './ThemeSelector';
 
 const SECTIONS = [
   { id: 'general', icon: '⚙️', label: 'General Settings' },
@@ -11,20 +12,28 @@ const SECTIONS = [
   { id: 'permissions', icon: '🔐', label: 'Permissions' },
   { id: 'skills', icon: '⚡', label: 'Skills & Commands' },
   { id: 'addons', icon: '🧩', label: 'Add-ons Marketplace' },
+  { id: 'capabilities', icon: '🎯', label: 'Capabilities' },
+  { id: 'guide', icon: '📖', label: 'User Guide' },
+  { id: 'models', icon: '🤖', label: 'Model Tiers' },
+  { id: 'plugins', icon: '📦', label: 'Plugin Packs' },
+  { id: 'mcp', icon: '🔌', label: 'MCP Servers' },
 ];
 
-export default function Sidebar({ activeSection, onSectionChange, mode, onModeChange }) {
+export default function Sidebar({ activeSection, onSectionChange, mode, onModeChange, theme, onThemeChange }) {
   return (
     <aside className="w-60 glass flex flex-col border-r border-slate-700/50">
-      <div className="p-6 bg-gradient-to-b from-purple-500/10 to-transparent border-b border-slate-700/30">
+      <div className="p-6 bg-gradient-to-b from-accent/10 to-transparent border-b border-slate-700/30">
         <div className="flex items-center gap-2">
           <span className="text-3xl animate-pulse">⚡</span>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-200 to-purple-400 bg-clip-text text-transparent">RUFLO GUI</h1>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-accent-light to-accent-med-dark bg-clip-text text-transparent">RUFLO GUI</h1>
         </div>
       </div>
 
       <div className="p-6 pb-4">
         <ModeToggle mode={mode} onModeChange={onModeChange} />
+        <div className="mt-4">
+          <ThemeSelector currentTheme={theme} onThemeChange={onThemeChange} />
+        </div>
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent"></div>
@@ -36,7 +45,7 @@ export default function Sidebar({ activeSection, onSectionChange, mode, onModeCh
             onClick={() => onSectionChange(section.id)}
             className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 group ${
               activeSection === section.id
-                ? 'bg-slate-700/40 border-l-4 border-purple-500 text-purple-200'
+                ? 'bg-slate-700/40 border-l-4 border-accent text-accent-light'
                 : 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/20'
             }`}
           >

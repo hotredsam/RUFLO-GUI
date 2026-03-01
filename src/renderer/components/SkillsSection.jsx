@@ -28,7 +28,7 @@ export default function SkillsSection({ mode }) {
             ? 'Slash commands you can use in Claude Code to do cool things.'
             : 'Available slash commands for Claude Code workflows and automation.'}
         </p>
-        <div className="h-0.5 w-16 bg-gradient-to-r from-purple-500 to-transparent rounded-full mt-3"></div>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full mt-3"></div>
       </div>
 
       <div className="mb-8 glass-card p-4 flex items-center gap-3">
@@ -53,7 +53,7 @@ export default function SkillsSection({ mode }) {
               onClick={() => setSelectedCategory(category)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 selectedCategory === category
-                  ? 'bg-purple-500 text-white'
+                  ? 'bg-accent text-white'
                   : 'bg-slate-700/30 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50'
               }`}
             >
@@ -81,12 +81,12 @@ export default function SkillsSection({ mode }) {
                 onClick={() => setExpandedSkill(isExpanded ? null : skill.id)}
               >
                 <div className="p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center text-2xl flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center text-2xl flex-shrink-0">
                     {skill.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <code className="text-purple-300 font-semibold text-sm">{skill.name}</code>
+                      <code className="text-accent-med font-semibold text-sm">{skill.name}</code>
                       <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-700/50 text-slate-400">
                         {skill.category}
                       </span>

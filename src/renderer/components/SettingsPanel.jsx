@@ -120,7 +120,7 @@ export default function SettingsPanel({ settings, mode, section, onUpdate }) {
         <h2 className="text-2xl font-bold text-slate-100 mb-3 capitalize">
           {section.replace(/([A-Z])/g, ' $1').trim()}
         </h2>
-        <div className="h-0.5 w-16 bg-gradient-to-r from-purple-500 to-transparent rounded-full"></div>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-accent to-transparent rounded-full"></div>
       </div>
 
       <div className="space-y-6">

@@ -7,12 +7,18 @@
   --glass-border: rgba(148, 163, 184, 0.1);
   --accent: #8b5cf6;
   --accent-hover: #7c3aed;
+  --accent-rgb: 139 92 246;
+  --accent-hover-rgb: 124 58 237;
+  --accent-light-rgb: 196 181 253;
+  --accent-med-rgb: 167 139 250;
+  --accent-med-dark-rgb: 139 92 246;
+  --bg-via: #1e1b4b;
 }
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); }
+  0%, 100% { box-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.3); }
+  50% { box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.6); }
 }
 
 @keyframes fade-in {
@@ -42,13 +48,13 @@
 }
 
 *:focus-visible {
-  outline: 2px solid rgba(139, 92, 246, 0.5);
+  outline: 2px solid rgb(var(--accent-rgb) / 0.5);
   outline-offset: 2px;
 }
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  background: linear-gradient(135deg, #0f172a 0%, var(--bg-via) 50%, #0f172a 100%);
   background-size: 200% 200%;
   animation: subtle-gradient 20s ease infinite;
   color: #e2e8f0;
@@ -77,8 +83,8 @@ body {
 }
 
 .glass-card:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+  border-color: rgb(var(--accent-rgb) / 0.3);
+  box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
   transform: translateY(-1px);
 }
 
@@ -99,7 +105,7 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #8b5cf6, #3b82f6, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), #3b82f6, transparent);
 }
 
 .toggle-switch {
@@ -146,7 +152,7 @@ input[type="text"], input[type="number"], select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.2);
   background: rgba(15, 23, 42, 0.8);
   transform: scale(1.01);
 }
@@ -173,7 +179,7 @@ button {
 .btn-primary:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.3);
 }
 
 .btn-primary:active {
@@ -195,7 +201,8 @@ button {
 
 /* Mode Toggle Pill */
 .mode-toggle-pill {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   background: rgba(51, 65, 85, 0.3);
   border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: 20px;
@@ -205,7 +212,8 @@ button {
 }
 
 .mode-toggle-btn {
-  padding: 6px 14px;
+  flex: 1;
+  padding: 6px 10px;
   border-radius: 18px;
   font-size: 12px;
   font-weight: 500;
@@ -216,13 +224,13 @@ button {
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .mode-toggle-btn.active {
   color: white;
   background: var(--accent);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.4);
 }
 
 .mode-toggle-btn:hover:not(.active) {
@@ -242,7 +250,7 @@ button {
   left: -1px;
   right: -1px;
   bottom: -1px;
-  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #3b82f6 100%);
   border-radius: 12px;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -254,5 +262,5 @@ button {
 }
 
 .addon-card:hover {
-  border-color: rgba(139, 92, 246, 0.5);
+  border-color: rgb(var(--accent-rgb) / 0.5);
 }

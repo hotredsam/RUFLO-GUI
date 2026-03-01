@@ -21,6 +21,13 @@ export default {
             800: '#3d2463',
           },
         },
+        accent: {
+          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
+          hover: 'rgb(var(--accent-hover-rgb) / <alpha-value>)',
+          light: 'rgb(var(--accent-light-rgb) / <alpha-value>)',
+          med: 'rgb(var(--accent-med-rgb) / <alpha-value>)',
+          'med-dark': 'rgb(var(--accent-med-dark-rgb) / <alpha-value>)',
+        },
       },
       backdropBlur: {
         glass: 'blur(10px)',

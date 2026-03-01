@@ -9,7 +9,13 @@ import SecuritySection from './components/SecuritySection';
 import PermissionsSection from './components/PermissionsSection';
 import AddonsMarketplace from './components/AddonsMarketplace';
 import SkillsSection from './components/SkillsSection';
+import CapabilitiesSection from './components/CapabilitiesSection';
+import UserGuideSection from './components/UserGuideSection';
+import ModelTiersSection from './components/ModelTiersSection';
+import PluginsSection from './components/PluginsSection';
+import MCPSection from './components/MCPSection';
 import StatusBar from './components/StatusBar';
+import { applyTheme, DEFAULT_THEME } from './lib/themes';
 
 export default function App() {
   const [settings, setSettings] = useState(null);
@@ -18,6 +24,7 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState('saved');
   const [lastSaved, setLastSaved] = useState(null);
   const [settingsPath, setSettingsPath] = useState('');
+  const [theme, setTheme] = useState(DEFAULT_THEME);
 
   const saveTimeoutRef = useRef(null);
   const hasInitialLoadRef = useRef(false);
@@ -54,6 +61,11 @@ export default function App() {
 
     return unsubscribe;
   }, []);
+
+  // Apply theme whenever it changes
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   // Auto-save with debounce
   useEffect(() => {
@@ -110,7 +122,10 @@ export default function App() {
 
   if (!settings) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div
+        className="flex items-center justify-center w-full h-screen"
+        style={{ background: `linear-gradient(to bottom right, #0f172a, var(--bg-via), #0f172a)` }}
+      >
         <div className="text-slate-300">Loading settings...</div>
       </div>
     );
@@ -138,19 +153,34 @@ export default function App() {
         return <SkillsSection {...props} />;
       case 'addons':
         return <AddonsMarketplace {...props} />;
+      case 'capabilities':
+        return <CapabilitiesSection {...props} />;
+      case 'guide':
+        return <UserGuideSection {...props} />;
+      case 'models':
+        return <ModelTiersSection {...props} />;
+      case 'plugins':
+        return <PluginsSection {...props} />;
+      case 'mcp':
+        return <MCPSection {...props} />;
       default:
         return <SettingsPanel {...props} section="general" />;
     }
   };
 
   return (
-    <div className="flex flex-col w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div
+      className="flex flex-col w-full h-screen"
+      style={{ background: `linear-gradient(to bottom right, #0f172a, var(--bg-via), #0f172a)` }}
+    >
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
           mode={mode}
           onModeChange={setMode}
+          theme={theme}
+          onThemeChange={setTheme}
         />
         <main className="flex-1 overflow-auto">
           {renderPanel()}
