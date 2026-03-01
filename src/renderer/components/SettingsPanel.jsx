@@ -116,13 +116,20 @@ export default function SettingsPanel({ settings, mode, section, onUpdate }) {
 
   return (
     <div className="p-8 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-slate-100 mb-8 capitalize">
-        {section.replace(/([A-Z])/g, ' $1').trim()}
-      </h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-100 mb-3 capitalize">
+          {section.replace(/([A-Z])/g, ' $1').trim()}
+        </h2>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-purple-500 to-transparent rounded-full"></div>
+      </div>
 
       <div className="space-y-6">
-        {sectionSettings.map((setting) => (
-          <div key={setting.path} className="glass-card p-6">
+        {sectionSettings.map((setting, idx) => (
+          <div
+            key={setting.path}
+            className="glass-card p-6"
+            style={{ animationDelay: `${idx * 50}ms` }}
+          >
             <div className="mb-4">
               <label className="block mb-2">
                 <div className="text-slate-200 font-medium">

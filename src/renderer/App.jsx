@@ -8,6 +8,7 @@ import MemorySection from './components/MemorySection';
 import SecuritySection from './components/SecuritySection';
 import PermissionsSection from './components/PermissionsSection';
 import AddonsMarketplace from './components/AddonsMarketplace';
+import SkillsSection from './components/SkillsSection';
 import StatusBar from './components/StatusBar';
 
 export default function App() {
@@ -133,6 +134,8 @@ export default function App() {
         return <SecuritySection {...props} />;
       case 'permissions':
         return <PermissionsSection {...props} />;
+      case 'skills':
+        return <SkillsSection {...props} />;
       case 'addons':
         return <AddonsMarketplace {...props} />;
       default:

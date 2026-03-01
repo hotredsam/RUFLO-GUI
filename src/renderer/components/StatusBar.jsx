@@ -21,13 +21,13 @@ export default function StatusBar({ settingsPath, saveStatus, mode, lastSaved })
   };
 
   return (
-    <div className="glass border-t border-slate-700/50 px-6 py-3 flex items-center justify-between text-xs">
-      <div className="text-slate-500 font-mono">
+    <div className="glass status-bar border-t border-slate-700/50 px-6 py-3 flex items-center justify-between text-xs">
+      <div className="text-slate-500 font-mono truncate">
         {settingsPath || 'Loading...'}
       </div>
 
-      <div className="flex items-center gap-2 text-slate-400">
-        <span>{statusIcon[saveStatus]}</span>
+      <div className="flex items-center gap-3 text-slate-400">
+        <span className={`${saveStatus === 'saving' ? 'animate-pulse' : ''}`}>{statusIcon[saveStatus]}</span>
         <span>
           {saveStatus === 'saved' && 'Saved'}
           {saveStatus === 'saving' && 'Saving...'}
@@ -42,7 +42,7 @@ export default function StatusBar({ settingsPath, saveStatus, mode, lastSaved })
       </div>
 
       <div className="flex items-center gap-2">
-        <span className={`px-3 py-1 rounded text-xs font-semibold ${
+        <span className={`px-3 py-1 rounded text-xs font-semibold transition ${
           mode === 'eli5'
             ? 'bg-blue-500/20 text-blue-300'
             : 'bg-purple-500/20 text-purple-300'

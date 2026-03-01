@@ -8,26 +8,18 @@ export default function ModeToggle({ mode, onModeChange }) {
       <div className="flex items-center gap-3">
         <span className="text-xs font-semibold text-slate-400 uppercase">Mode</span>
         <div className="flex-1"></div>
-        <div className="flex gap-2">
+        <div className="mode-toggle-pill">
           <button
             onClick={() => onModeChange('complex')}
-            className={`px-3 py-1 rounded text-xs font-medium transition ${
-              !isEli5
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-700/30 text-slate-400 hover:text-slate-300'
-            }`}
+            className={`mode-toggle-btn ${!isEli5 ? 'active' : ''}`}
           >
-            Complex
+            <span className="whitespace-nowrap">Complex</span>
           </button>
           <button
             onClick={() => onModeChange('eli5')}
-            className={`px-3 py-1 rounded text-xs font-medium transition ${
-              isEli5
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-700/30 text-slate-400 hover:text-slate-300'
-            }`}
+            className={`mode-toggle-btn ${isEli5 ? 'active' : ''}`}
           >
-            ELI5
+            <span className="whitespace-nowrap">ELI5</span>
           </button>
         </div>
       </div>
