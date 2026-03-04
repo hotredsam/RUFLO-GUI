@@ -1,22 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
 import EnvVarsSection from '../renderer/components/EnvVarsSection';
 import { setupMocks } from './mocks';
 
-describe('EnvVarsSection', () => {
-  const defaultSettings = {
-    model: 'claude-opus-4-6',
-    permissions: { allow: [], deny: [] },
-    env: {},
-    hooks: {},
-    security: {},
-    swarm: { enabled: false },
-    memory: { backend: 'sqlite' },
-    addons: { installed: [] },
-    environment: {},
-  };
+const defaultSettings = {
+  model: 'claude-opus-4-6',
+  permissions: { allow: [], deny: [] },
+  env: {},
+  hooks: {},
+  sandbox: {},
+  swarm: { enabled: false },
+  memory: { cleanupPeriodDays: 30 },
+  addons: { installed: [] },
+};
 
+describe('EnvVarsSection', () => {
   beforeEach(() => {
     setupMocks();
   });
@@ -26,7 +24,7 @@ describe('EnvVarsSection', () => {
     render(
       <EnvVarsSection
         settings={defaultSettings}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -34,7 +32,7 @@ describe('EnvVarsSection', () => {
     expect(screen.getByText('Environment Variables')).toBeInTheDocument();
   });
 
-  it('shows env var inputs', () => {
+  it('displays eli5 mode description', () => {
     const onUpdate = vi.fn();
     render(
       <EnvVarsSection
@@ -44,51 +42,10 @@ describe('EnvVarsSection', () => {
       />
     );
 
-    // Check for some expected environment variable labels
-    expect(screen.getByText('Anthropic API Key')).toBeInTheDocument();
-    expect(screen.getByText('Max Memory Usage')).toBeInTheDocument();
-    expect(screen.getByText('Disable Non-Essential Network Traffic')).toBeInTheDocument();
+    expect(screen.getByText('Set API keys and configuration values that your AI tools need.')).toBeInTheDocument();
   });
 
-  it('calls onUpdate when env var changed', () => {
-    const onUpdate = vi.fn();
-    render(
-      <EnvVarsSection
-        settings={{
-          ...defaultSettings,
-          environment: {
-            ANTHROPIC_API_KEY: 'old-key',
-          },
-        }}
-        mode="eli5"
-        onUpdate={onUpdate}
-      />
-    );
-
-    // Find the Anthropic API Key input and change it
-    const inputs = screen.getAllByDisplayValue('old-key');
-    if (inputs.length > 0) {
-      fireEvent.change(inputs[0], { target: { value: 'new-key' } });
-      expect(onUpdate).toHaveBeenCalledWith('environment.ANTHROPIC_API_KEY', 'new-key');
-    }
-  });
-
-  it('mode-aware text displays correctly in eli5 mode', () => {
-    const onUpdate = vi.fn();
-    render(
-      <EnvVarsSection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={onUpdate}
-      />
-    );
-
-    // ELI5 mode should show friendly descriptions
-    expect(screen.getByText('Your API key from Anthropic to use Claude models. Get it from your Anthropic console.')).toBeInTheDocument();
-    expect(screen.getByText('How much memory Claude Code can use. Set a limit to prevent your system from slowing down.')).toBeInTheDocument();
-  });
-
-  it('mode-aware text displays correctly in complex mode', () => {
+  it('displays complex mode description', () => {
     const onUpdate = vi.fn();
     render(
       <EnvVarsSection
@@ -98,10 +55,145 @@ describe('EnvVarsSection', () => {
       />
     );
 
-    // Complex mode should show technical descriptions and var names
-    expect(screen.getByText('Environment variable storing the authentication token for Anthropic Claude API access.')).toBeInTheDocument();
+    expect(screen.getByText('Manage environment variables injected into agent and tool execution contexts.')).toBeInTheDocument();
+  });
+
+  it('renders all known environment variables', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('API Key')).toBeInTheDocument();
+    expect(screen.getByText('Disable Telemetry')).toBeInTheDocument();
+    expect(screen.getByText('Use AWS Bedrock')).toBeInTheDocument();
+    expect(screen.getByText('Use Google Vertex')).toBeInTheDocument();
+    expect(screen.getByText('Skip Chrome Download')).toBeInTheDocument();
+    expect(screen.getByText('Disable Prompt Caching')).toBeInTheDocument();
+    expect(screen.getByText('Disable Auto-Compact')).toBeInTheDocument();
+    expect(screen.getByText('Auto-Compact Threshold')).toBeInTheDocument();
+    expect(screen.getByText('Enable Agent Teams')).toBeInTheDocument();
+  });
+
+  it('displays eli5 descriptions in eli5 mode', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={defaultSettings}
+        mode="eli5"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('Your Anthropic API key')).toBeInTheDocument();
+    expect(screen.getByText('Stop sending usage data')).toBeInTheDocument();
+    expect(screen.getByText('Connect through Amazon cloud')).toBeInTheDocument();
+  });
+
+  it('displays complex descriptions in complex mode', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('ANTHROPIC_API_KEY for direct API access')).toBeInTheDocument();
+    expect(screen.getByText('Disable non-essential network traffic')).toBeInTheDocument();
+    expect(screen.getByText('Route API calls through AWS Bedrock')).toBeInTheDocument();
+  });
+
+  it('displays environment variable names in complex mode', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
     expect(screen.getByText('ANTHROPIC_API_KEY')).toBeInTheDocument();
-    expect(screen.getByText('CLAUDE_CODE_MAX_MEMORY')).toBeInTheDocument();
+    expect(screen.getByText('CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC')).toBeInTheDocument();
+    expect(screen.getByText('CLAUDE_CODE_USE_BEDROCK')).toBeInTheDocument();
+  });
+
+  it('toggles environment variable and sets value to "1"', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const toggles = document.querySelectorAll('.toggle-switch');
+    fireEvent.click(toggles[0]); // Click first toggle (Disable Telemetry)
+
+    expect(onUpdate).toHaveBeenCalledWith('env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', '1');
+  });
+
+  it('disables toggle by setting value to undefined', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={{
+          ...defaultSettings,
+          env: { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const toggles = document.querySelectorAll('.toggle-switch');
+    const activeToggle = Array.from(toggles).find(t => t.classList.contains('active'));
+    fireEvent.click(activeToggle);
+
+    expect(onUpdate).toHaveBeenCalledWith('env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', undefined);
+  });
+
+  it('shows active toggle when value is set', () => {
+    render(
+      <EnvVarsSection
+        settings={{
+          ...defaultSettings,
+          env: { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' },
+        }}
+        mode="complex"
+        onUpdate={vi.fn()}
+      />
+    );
+
+    const toggles = document.querySelectorAll('.toggle-switch');
+    const activeToggle = Array.from(toggles).find(t => t.classList.contains('active'));
+    expect(activeToggle).toBeDefined();
+  });
+
+  it('updates text input env variable on change', () => {
+    const onUpdate = vi.fn();
+    render(
+      <EnvVarsSection
+        settings={{
+          ...defaultSettings,
+          env: { ANTHROPIC_API_KEY: 'old-key' },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const input = screen.getByDisplayValue('old-key');
+    fireEvent.change(input, { target: { value: 'new-key' } });
+
+    expect(onUpdate).toHaveBeenCalledWith('env.ANTHROPIC_API_KEY', 'new-key');
   });
 
   it('displays custom environment variables section', () => {
@@ -110,11 +202,9 @@ describe('EnvVarsSection', () => {
       <EnvVarsSection
         settings={{
           ...defaultSettings,
-          environment: {
-            MY_CUSTOM_VAR: 'custom-value',
-          },
+          env: { MY_CUSTOM_VAR: 'custom-value' },
         }}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -129,7 +219,7 @@ describe('EnvVarsSection', () => {
     render(
       <EnvVarsSection
         settings={defaultSettings}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -142,7 +232,7 @@ describe('EnvVarsSection', () => {
     fireEvent.change(valueTextarea, { target: { value: 'new-value' } });
     fireEvent.click(addButton);
 
-    expect(onUpdate).toHaveBeenCalledWith('environment.NEW_VAR', 'new-value');
+    expect(onUpdate).toHaveBeenCalledWith('env.NEW_VAR', 'new-value');
   });
 
   it('clears inputs after adding custom variable', () => {
@@ -150,7 +240,7 @@ describe('EnvVarsSection', () => {
     const { rerender } = render(
       <EnvVarsSection
         settings={defaultSettings}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -163,7 +253,6 @@ describe('EnvVarsSection', () => {
     fireEvent.change(valueTextarea, { target: { value: 'new-value' } });
     fireEvent.click(addButton);
 
-    // After adding, inputs should be cleared
     expect(nameInput.value).toBe('');
     expect(valueTextarea.value).toBe('');
   });
@@ -173,7 +262,7 @@ describe('EnvVarsSection', () => {
     render(
       <EnvVarsSection
         settings={defaultSettings}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -182,12 +271,10 @@ describe('EnvVarsSection', () => {
     const valueTextarea = screen.getByPlaceholderText('Variable value');
     const addButton = screen.getByText('Add Custom Variable');
 
-    // Try to add with empty name (should be trimmed)
     fireEvent.change(nameInput, { target: { value: '   ' } });
     fireEvent.change(valueTextarea, { target: { value: 'some-value' } });
     fireEvent.click(addButton);
 
-    // onUpdate should not be called for empty name
     expect(onUpdate).not.toHaveBeenCalled();
   });
 
@@ -197,11 +284,9 @@ describe('EnvVarsSection', () => {
       <EnvVarsSection
         settings={{
           ...defaultSettings,
-          environment: {
-            MY_CUSTOM_VAR: 'custom-value',
-          },
+          env: { MY_CUSTOM_VAR: 'custom-value' },
         }}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
@@ -209,47 +294,26 @@ describe('EnvVarsSection', () => {
     const deleteButton = screen.getByText('Delete');
     fireEvent.click(deleteButton);
 
-    expect(onUpdate).toHaveBeenCalledWith('environment', {});
+    expect(onUpdate).toHaveBeenCalledWith('env.MY_CUSTOM_VAR', undefined);
   });
 
-  it('handles number type environment variables', () => {
+  it('does not show custom variables in custom section if they match known vars', () => {
     const onUpdate = vi.fn();
     render(
       <EnvVarsSection
         settings={{
           ...defaultSettings,
-          environment: {
-            CLAUDE_CODE_MAX_MEMORY: '2048',
-          },
+          env: { ANTHROPIC_API_KEY: 'my-key' },
         }}
-        mode="eli5"
+        mode="complex"
         onUpdate={onUpdate}
       />
     );
 
-    const numberInputs = screen.getAllByDisplayValue('2048');
-    if (numberInputs.length > 0) {
-      fireEvent.change(numberInputs[0], { target: { value: '4096' } });
-      expect(onUpdate).toHaveBeenCalledWith('environment.CLAUDE_CODE_MAX_MEMORY', 4096);
-    }
-  });
+    // The custom section should not display ANTHROPIC_API_KEY since it's a known var
+    const customSection = screen.getByText('Custom Environment Variables').closest('.glass-card');
+    const customVarItems = customSection.querySelectorAll('.flex.gap-2');
 
-  it('handles toggle type environment variables', () => {
-    const onUpdate = vi.fn();
-    render(
-      <EnvVarsSection
-        settings={{
-          ...defaultSettings,
-          environment: {
-            CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: false,
-          },
-        }}
-        mode="eli5"
-        onUpdate={onUpdate}
-      />
-    );
-
-    // Should render toggle switches for toggle-type env vars
-    expect(screen.getByText('Disable Non-Essential Network Traffic')).toBeInTheDocument();
+    expect(customVarItems.length).toBe(0); // Should not show any custom variables
   });
 });

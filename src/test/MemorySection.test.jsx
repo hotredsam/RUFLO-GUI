@@ -3,15 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import MemorySection from '../renderer/components/MemorySection';
 import { setupMocks } from './mocks';
 
-const defaultSettings = {
-  model: 'claude-opus-4-6',
-  permissions: { allow: [], deny: [] },
-  env: {},
-  hooks: {},
-  security: {},
-  swarm: { enabled: false },
-  memory: { backend: 'sqlite' },
-  addons: { installed: [] },
+const defaultProps = {
+  settings: {
+    memory: {
+      backend: 'sqlite',
+      path: '~/.claude/memory',
+      maxSizeMB: 500,
+      retentionDays: 90,
+      cleanupPeriodDays: 30,
+      autoConsolidate: true,
+      consolidationInterval: 24,
+      hnswEnabled: false,
+      hnswDimensions: 384,
+      hnswM: 16,
+      hnswEfConstruction: 200,
+    },
+  },
+  mode: 'complex',
+  onUpdate: vi.fn(),
 };
 
 describe('MemorySection', () => {
@@ -19,372 +28,684 @@ describe('MemorySection', () => {
     setupMocks();
   });
 
-  it('renders Memory & Learning heading', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Header and Description', () => {
+    it('renders heading with "Memory & Cleanup"', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toBe('Memory & Learning');
+      const heading = screen.getByRole('heading', { level: 2 });
+      expect(heading.textContent).toContain('Memory');
+      expect(heading.textContent).toContain('Cleanup');
+    });
+
+    it('renders eli5 description text', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Control how Claude Code stores and manages conversation history/)).toBeInTheDocument();
+    });
+
+    it('renders complex description text', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Configure session data storage, retention, and indexing parameters/)).toBeInTheDocument();
+    });
   });
 
-  it('shows memory backend selector', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Storage Backend Selection', () => {
+    it('renders 4 storage backend cards (sqlite, json, hybrid, memory)', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Backend')).toBeInTheDocument();
+      expect(screen.getByText('SQLite')).toBeInTheDocument();
+      expect(screen.getByText('JSON')).toBeInTheDocument();
+      expect(screen.getByText('Hybrid')).toBeInTheDocument();
+      expect(screen.getByText('Memory')).toBeInTheDocument();
+    });
+
+    it('selected backend has visual indicator (ring-2)', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const selectedCard = container.querySelector('.ring-2.ring-accent');
+      expect(selectedCard).toBeInTheDocument();
+      expect(selectedCard.textContent).toContain('SQLite');
+    });
+
+    it('clicking backend card calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const jsonButton = screen.getByText('JSON').closest('button');
+      fireEvent.click(jsonButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.backend', 'json');
+    });
   });
 
-  it('displays mode-aware label for backend in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Memory Path Input', () => {
+    it('memory path input renders with default value', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Memory Storage Type')).toBeInTheDocument();
-    expect(screen.getByText('SQLite: Most reliable, JSON: Simple file-based, Memory: Fast but temporary')).toBeInTheDocument();
+      const pathInput = screen.getByDisplayValue('~/.claude/memory');
+      expect(pathInput).toBeInTheDocument();
+    });
+
+    it('changing memory path calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const pathInput = screen.getByDisplayValue('~/.claude/memory');
+      fireEvent.change(pathInput, { target: { value: '~/custom/path' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.path', '~/custom/path');
+    });
   });
 
-  it('displays all memory backend options', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Max Size Input', () => {
+    it('max size input renders with default value', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const backendSelect = screen.getAllByRole('combobox')[0];
-    fireEvent.click(backendSelect);
+      const maxSizeInput = screen.getByDisplayValue('500');
+      expect(maxSizeInput).toBeInTheDocument();
+      expect(maxSizeInput.type).toBe('number');
+    });
 
-    expect(screen.getByText('SQLITE')).toBeInTheDocument();
-    expect(screen.getByText('JSON')).toBeInTheDocument();
-    expect(screen.getByText('MEMORY')).toBeInTheDocument();
+    it('changing max size calls onUpdate with number', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const maxSizeInput = screen.getByDisplayValue('500');
+      fireEvent.change(maxSizeInput, { target: { value: '1000' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.maxSizeMB', 1000);
+    });
   });
 
-  it('updates backend on selection change', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Retention Period', () => {
+    it('retention period shows "Keep Memory For" in eli5 mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const backendSelect = screen.getAllByRole('combobox')[0];
-    fireEvent.change(backendSelect, { target: { value: 'json' } });
+      expect(screen.getByText('Keep Memory For')).toBeInTheDocument();
+    });
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('memory.backend', 'json');
+    it('retention period shows "Retention Period" in complex mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText('Retention Period')).toBeInTheDocument();
+    });
+
+    it('retention period input has correct default', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const inputs = screen.getAllByDisplayValue('90');
+      expect(inputs.length).toBeGreaterThan(0);
+    });
+
+    it('changing retention period calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const retentionInputs = screen.getAllByDisplayValue('90');
+      fireEvent.change(retentionInputs[0], { target: { value: '180' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.retentionDays', 180);
+    });
   });
 
-  it('displays current backend selection', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: { backend: 'json' },
-    };
+  describe('Cleanup Period', () => {
+    it('cleanup period input renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      expect(screen.getByText('Cleanup Period (Days)')).toBeInTheDocument();
+    });
 
-    const backendSelect = screen.getAllByRole('combobox')[0];
-    expect(backendSelect.value).toBe('json');
+    it('cleanup period input shows label in eli5 mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText('Cleanup Check Interval')).toBeInTheDocument();
+    });
+
+    it('changing cleanup period calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const cleanupInputs = screen.getAllByDisplayValue('30');
+      fireEvent.change(cleanupInputs[0], { target: { value: '60' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.cleanupPeriodDays', 60);
+    });
   });
 
-  it('displays vector search toggle', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Auto-Consolidate Toggle', () => {
+    it('auto-consolidate toggle renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('HNSW Vector Search')).toBeInTheDocument();
+      expect(screen.getByText('Auto-Consolidate')).toBeInTheDocument();
+    });
+
+    it('shows "Auto-Compress Memories" label in eli5 mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText('Auto-Compress Memories')).toBeInTheDocument();
+    });
+
+    it('clicking auto-consolidate calls onUpdate with toggled value', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const toggles = container.querySelectorAll('.toggle-switch');
+      fireEvent.click(toggles[0]);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.autoConsolidate', false);
+    });
   });
 
-  it('displays mode-aware label for vector search in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Consolidation Interval', () => {
+    it('consolidation interval input renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Smart Memory Search')).toBeInTheDocument();
-    expect(screen.getByText('Use advanced AI to find related memories instead of simple keyword search')).toBeInTheDocument();
+      expect(screen.getByText('Consolidation Interval')).toBeInTheDocument();
+    });
+
+    it('consolidation interval has correct default value', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const inputs = container.querySelectorAll('input[type="number"]');
+      const consolidationInput = Array.from(inputs).find(
+        (input) => input.value === '24'
+      );
+      expect(consolidationInput).toBeInTheDocument();
+    });
+
+    it('changing consolidation interval calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const inputs = container.querySelectorAll('input[type="number"]');
+      const consolidationInput = Array.from(inputs).find(
+        (input) => input.value === '24'
+      );
+      fireEvent.change(consolidationInput, { target: { value: '48' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.consolidationInterval', 48);
+    });
   });
 
-  it('toggles vector search', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: { backend: 'sqlite', vectorSearch: false },
-    };
+  describe('HNSW Section', () => {
+    it('HNSW section heading renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const { container } = render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      expect(screen.getByText('HNSW Indexing')).toBeInTheDocument();
+    });
 
-    const toggleSwitches = container.querySelectorAll('.toggle-switch');
-    fireEvent.click(toggleSwitches[0]);
+    it('shows "Smart Memory Search" label in eli5 mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('memory.vectorSearch', true);
+      expect(screen.getByText('Smart Memory Search')).toBeInTheDocument();
+    });
+
+    it('HNSW enable toggle renders', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const hsectionButton = container.querySelector('.glass-card button');
+      expect(hsectionButton).toBeInTheDocument();
+    });
+
+    it('HNSW parameters hidden when disabled', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.queryByText('Vector Dimensions')).not.toBeInTheDocument();
+      expect(screen.queryByText('M Parameter')).not.toBeInTheDocument();
+      expect(screen.queryByText('EF Construction')).not.toBeInTheDocument();
+    });
+
+    it('HNSW parameters visible when enabled', () => {
+      const { onUpdate } = defaultProps;
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      expect(screen.getByText('Vector Dimensions')).toBeInTheDocument();
+      expect(screen.getByText('M Parameter')).toBeInTheDocument();
+      expect(screen.getByText('EF Construction')).toBeInTheDocument();
+    });
+
+    it('HNSW dimensions input renders with correct default', () => {
+      const { onUpdate } = defaultProps;
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const dimensionsInput = screen.getByDisplayValue('384');
+      expect(dimensionsInput).toBeInTheDocument();
+    });
+
+    it('changing HNSW dimensions calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const dimensionsInput = screen.getByDisplayValue('384');
+      fireEvent.change(dimensionsInput, { target: { value: '512' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.hnswDimensions', 512);
+    });
+
+    it('HNSW M parameter input renders with correct default', () => {
+      const { onUpdate } = defaultProps;
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const mInput = screen.getByDisplayValue('16');
+      expect(mInput).toBeInTheDocument();
+    });
+
+    it('changing HNSW M parameter calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const mInput = screen.getByDisplayValue('16');
+      fireEvent.change(mInput, { target: { value: '32' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.hnswM', 32);
+    });
+
+    it('HNSW EF Construction input renders with correct default', () => {
+      const { onUpdate } = defaultProps;
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const efInput = screen.getByDisplayValue('200');
+      expect(efInput).toBeInTheDocument();
+    });
+
+    it('changing HNSW EF Construction calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const enabledSettings = {
+        ...defaultProps.settings,
+        memory: {
+          ...defaultProps.settings.memory,
+          hnswEnabled: true,
+        },
+      };
+
+      const { container } = render(
+        <MemorySection
+          settings={enabledSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
+
+      fireEvent.click(hnsWSectionButton);
+
+      const efInput = screen.getByDisplayValue('200');
+      fireEvent.change(efInput, { target: { value: '300' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('memory.hnswEfConstruction', 300);
+    });
   });
 
-  it('displays retention days input', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Edge Cases and Robustness', () => {
+    it('handles missing memory settings gracefully', () => {
+      const mockOnUpdate = vi.fn();
+      const noMemorySettings = {
+        ...defaultProps.settings,
+        memory: undefined,
+      };
 
-    expect(screen.getByText('Retention Days')).toBeInTheDocument();
-  });
+      render(
+        <MemorySection
+          settings={noMemorySettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
 
-  it('displays mode-aware label for retention days in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      expect(screen.getByText('Memory & Cleanup')).toBeInTheDocument();
+    });
 
-    expect(screen.getByText('Keep Memories For')).toBeInTheDocument();
-    expect(screen.getByText('How long to keep old memories (in days)')).toBeInTheDocument();
-  });
+    it('renders about section in eli5 mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
 
-  it('updates retention days on input change', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: { backend: 'sqlite', retentionDays: 30 },
-    };
+      expect(screen.getByText('About Memory Management')).toBeInTheDocument();
+      expect(screen.getByText(/Claude Code automatically manages conversation history/)).toBeInTheDocument();
+    });
 
-    render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+    it('renders about section in complex mode', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const retentionDaysInputs = screen.getAllByDisplayValue('30');
-    fireEvent.change(retentionDaysInputs[0], { target: { value: '60' } });
+      expect(screen.getByText('About Memory Management')).toBeInTheDocument();
+      expect(screen.getByText(/Storage Backends:/)).toBeInTheDocument();
+    });
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('memory.retentionDays', 60);
-  });
+    it('toggles HNSW section when clicking expand button', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <MemorySection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-  it('displays default retention days when not specified', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      const hnsWSectionButton = Array.from(
+        container.querySelectorAll('.glass-card button')
+      ).find((btn) => btn.textContent.includes('HNSW'));
 
-    const retentionDaysInputs = screen.getAllByDisplayValue('30');
-    expect(retentionDaysInputs.length).toBeGreaterThan(0);
-  });
+      fireEvent.click(hnsWSectionButton);
 
-  it('displays max entries input', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByText('Max Entries')).toBeInTheDocument();
-  });
-
-  it('displays mode-aware label for max entries in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByText('Maximum Memories')).toBeInTheDocument();
-    expect(screen.getByText('Maximum number of memories to store')).toBeInTheDocument();
-  });
-
-  it('updates max entries on input change', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: { backend: 'sqlite', maxEntries: 10000 },
-    };
-
-    render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const maxEntriesInputs = screen.getAllByDisplayValue('10000');
-    fireEvent.change(maxEntriesInputs[0], { target: { value: '20000' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith('memory.maxEntries', 20000);
-  });
-
-  it('displays default max entries when not specified', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const maxEntriesInputs = screen.getAllByDisplayValue('10000');
-    expect(maxEntriesInputs.length).toBeGreaterThan(0);
-  });
-
-  it('displays auto consolidate toggle', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByText('Auto-Consolidate')).toBeInTheDocument();
-  });
-
-  it('displays mode-aware label for auto consolidate in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <MemorySection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByText('Auto-Organize Memories')).toBeInTheDocument();
-    expect(screen.getByText('Automatically clean up and organize old memories')).toBeInTheDocument();
-  });
-
-  it('toggles auto consolidate', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: { backend: 'sqlite', autoConsolidate: false },
-    };
-
-    const { container } = render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const toggleSwitches = container.querySelectorAll('.toggle-switch');
-    fireEvent.click(toggleSwitches[toggleSwitches.length - 1]);
-
-    expect(mockOnUpdate).toHaveBeenCalledWith('memory.autoConsolidate', true);
-  });
-
-  it('handles all controls together in complex mode', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: {
-        backend: 'sqlite',
-        vectorSearch: true,
-        retentionDays: 45,
-        maxEntries: 15000,
-        autoConsolidate: true,
-      },
-    };
-
-    render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getAllByRole('combobox')[0].value).toBe('sqlite');
-    expect(screen.getByDisplayValue('45')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('15000')).toBeInTheDocument();
-  });
-
-  it('handles all controls together in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithMemory = {
-      ...defaultSettings,
-      memory: {
-        backend: 'json',
-        vectorSearch: false,
-        retentionDays: 90,
-        maxEntries: 5000,
-        autoConsolidate: false,
-      },
-    };
-
-    render(
-      <MemorySection
-        settings={settingsWithMemory}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByText('Memory Storage Type')).toBeInTheDocument();
-    expect(screen.getByText('Smart Memory Search')).toBeInTheDocument();
-    expect(screen.getByText('Keep Memories For')).toBeInTheDocument();
-    expect(screen.getByText('Maximum Memories')).toBeInTheDocument();
-    expect(screen.getByText('Auto-Organize Memories')).toBeInTheDocument();
+      expect(screen.getByText('Enable HNSW')).toBeInTheDocument();
+    });
   });
 });

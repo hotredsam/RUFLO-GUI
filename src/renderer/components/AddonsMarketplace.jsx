@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import AddonCard from './AddonCard';
 import { ADDONS } from '../lib/addons';
+import { getAddonRealSettings } from '../lib/settings-mapper';
 
 // Derive categories dynamically from addon data
 const CATEGORIES = ['All', ...Array.from(new Set(ADDONS.map((a) => a.category))).sort()];
 
-export default function AddonsMarketplace({ settings, mode }) {
+export default function AddonsMarketplace({ settings, mode, onUpdate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [installedAddons, setInstalledAddons] = useState(settings.addons?.installed || []);
+  const installedAddons = settings.addons?.installed || [];
 
   const filteredAddons = useMemo(() => {
     return ADDONS.filter((addon) => {
@@ -25,7 +26,11 @@ export default function AddonsMarketplace({ settings, mode }) {
 
   const handleAddonInstalled = (addonId) => {
     if (!installedAddons.includes(addonId)) {
-      setInstalledAddons([...installedAddons, addonId]);
+      onUpdate('addons.installed', [...installedAddons, addonId]);
+      // Apply real Claude Code settings for this addon
+      getAddonRealSettings(addonId).forEach(({ path, value }) => {
+        onUpdate(path, value);
+      });
     }
   };
 

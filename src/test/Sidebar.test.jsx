@@ -24,9 +24,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('General Settings')).toBeInTheDocument();
     expect(screen.getByText('Environment Variables')).toBeInTheDocument();
     expect(screen.getByText('Hooks')).toBeInTheDocument();
-    expect(screen.getByText('Swarm & Agents')).toBeInTheDocument();
-    expect(screen.getByText('Memory & Learning')).toBeInTheDocument();
-    expect(screen.getByText('Security')).toBeInTheDocument();
+    expect(screen.getByText('Agent Teams')).toBeInTheDocument();
+    expect(screen.getByText('Memory & Cleanup')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox & Security')).toBeInTheDocument();
     expect(screen.getByText('Permissions')).toBeInTheDocument();
     expect(screen.getByText('Skills & Commands')).toBeInTheDocument();
     expect(screen.getByText('Add-ons Marketplace')).toBeInTheDocument();

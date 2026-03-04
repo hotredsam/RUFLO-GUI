@@ -147,6 +147,13 @@ describe('getSettingSideEffects', () => {
     ]);
   });
 
+  it('contextAutopilot.enabled = false sets DISABLE_AUTO_COMPACT to 1', () => {
+    const effects = getSettingSideEffects('contextAutopilot.enabled', false, baseSettings);
+    expect(effects).toEqual([
+      { path: 'env.DISABLE_AUTO_COMPACT', value: '1' },
+    ]);
+  });
+
   // --- contextAutopilot.compactThreshold ---
   it('contextAutopilot.compactThreshold = 75 sets CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', () => {
     const effects = getSettingSideEffects('contextAutopilot.compactThreshold', 75, baseSettings);

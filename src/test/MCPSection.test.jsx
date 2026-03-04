@@ -10,12 +10,12 @@ describe('MCPSection', () => {
     permissions: { allow: [], deny: [] },
     env: {},
     hooks: {},
-    security: {},
+    sandbox: {},
     swarm: { enabled: false },
-    memory: { backend: 'sqlite' },
+    memory: { cleanupPeriodDays: 30 },
     addons: { installed: [] },
     mcpServers: {
-      filesystem: { enabled: true },
+      filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/path/to/allowed/dir'] },
     },
   };
 
@@ -213,12 +213,12 @@ describe('MCPSection', () => {
 
     const toggles = document.querySelectorAll('.toggle-switch');
 
-    // Find a disabled server toggle
+    // Find a disabled server toggle (second server is not in settings)
     fireEvent.click(toggles[1]);
 
     expect(mockOnUpdate).toHaveBeenCalledWith(
       expect.stringContaining('mcpServers.'),
-      expect.any(Boolean)
+      expect.objectContaining({ command: expect.any(String) })
     );
   });
 
@@ -237,8 +237,8 @@ describe('MCPSection', () => {
     fireEvent.click(toggles[0]);
 
     expect(mockOnUpdate).toHaveBeenCalledWith(
-      'mcpServers.filesystem.enabled',
-      false
+      'mcpServers.filesystem',
+      undefined
     );
   });
 
@@ -484,18 +484,20 @@ describe('MCPSection', () => {
 
     const toggles = document.querySelectorAll('.toggle-switch');
 
+    // Filesystem is enabled — clicking disables it
     fireEvent.click(toggles[0]);
     expect(mockOnUpdate).toHaveBeenCalledWith(
-      'mcpServers.filesystem.enabled',
-      expect.any(Boolean)
+      'mcpServers.filesystem',
+      undefined
     );
 
     mockOnUpdate.mockClear();
 
+    // Second server is disabled — clicking enables it with full config
     fireEvent.click(toggles[1]);
     expect(mockOnUpdate).toHaveBeenCalledWith(
       expect.stringMatching(/^mcpServers\.(?!filesystem)/),
-      expect.any(Boolean)
+      expect.objectContaining({ command: expect.any(String) })
     );
   });
 });

@@ -8,9 +8,9 @@ const defaultSettings = {
   permissions: { allow: [], deny: [] },
   env: {},
   hooks: {},
-  security: {},
+  sandbox: {},
   swarm: { enabled: false },
-  memory: { backend: 'sqlite' },
+  memory: { cleanupPeriodDays: 30 },
   addons: { installed: [] },
 };
 

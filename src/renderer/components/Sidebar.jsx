@@ -6,9 +6,9 @@ const SECTIONS = [
   { id: 'general', icon: '⚙️', label: 'General Settings' },
   { id: 'env', icon: '🔑', label: 'Environment Variables' },
   { id: 'hooks', icon: '🪝', label: 'Hooks' },
-  { id: 'swarm', icon: '🐝', label: 'Swarm & Agents' },
-  { id: 'memory', icon: '🧠', label: 'Memory & Learning' },
-  { id: 'security', icon: '🛡️', label: 'Security' },
+  { id: 'swarm', icon: '🐝', label: 'Agent Teams' },
+  { id: 'memory', icon: '🧠', label: 'Memory & Cleanup' },
+  { id: 'security', icon: '🛡️', label: 'Sandbox & Security' },
   { id: 'permissions', icon: '🔐', label: 'Permissions' },
   { id: 'skills', icon: '⚡', label: 'Skills & Commands' },
   { id: 'addons', icon: '🧩', label: 'Add-ons Marketplace' },
@@ -17,6 +17,10 @@ const SECTIONS = [
   { id: 'models', icon: '🤖', label: 'Model Tiers' },
   { id: 'plugins', icon: '📦', label: 'Plugin Packs' },
   { id: 'mcp', icon: '🔌', label: 'MCP Servers' },
+  { id: 'context', icon: '🧭', label: 'Context Autopilot' },
+  { id: 'verification', icon: '✅', label: 'Verification' },
+  { id: 'templates', icon: '📋', label: 'CLAUDE.md Templates' },
+  { id: 'diagnostics', icon: '🔧', label: 'Diagnostics' },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange, mode, onModeChange, theme, onThemeChange }) {

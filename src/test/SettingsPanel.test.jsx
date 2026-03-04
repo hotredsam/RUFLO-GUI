@@ -10,9 +10,9 @@ describe('SettingsPanel', () => {
     permissions: { allow: [], deny: [] },
     env: {},
     hooks: {},
-    security: {},
+    sandbox: {},
     swarm: { enabled: false },
-    memory: { backend: 'sqlite' },
+    memory: { cleanupPeriodDays: 30 },
     addons: { installed: [] },
   };
 
@@ -45,10 +45,10 @@ describe('SettingsPanel', () => {
       />
     );
 
-    // Check for some expected general settings fields
+    // Check for expected general settings fields from eli5.js
     expect(screen.getByText('Default Model')).toBeInTheDocument();
-    expect(screen.getByText('Custom API Key')).toBeInTheDocument();
-    expect(screen.getByText('Maximum Output Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Response Language')).toBeInTheDocument();
+    expect(screen.getByText('Output Style')).toBeInTheDocument();
   });
 
   it('mode-aware descriptions change when mode prop changes', () => {
@@ -63,7 +63,7 @@ describe('SettingsPanel', () => {
     );
 
     // ELI5 mode should show eli5 descriptions
-    expect(screen.getByText('Which AI model to use when you ask for help. Choose Claude, GPT, or another available model.')).toBeInTheDocument();
+    expect(screen.getByText('Which Claude model to use for your tasks. Sonnet is balanced, Opus is most capable, Haiku is fastest and cheapest.')).toBeInTheDocument();
 
     // Switch to complex mode
     rerender(
@@ -76,7 +76,7 @@ describe('SettingsPanel', () => {
     );
 
     // Complex mode should show complex descriptions and paths
-    expect(screen.getByText('The default LLM model identifier used for code analysis, generation, and problem-solving tasks.')).toBeInTheDocument();
+    expect(screen.getByText(/The default LLM model identifier used for code analysis, generation, and reasoning tasks/)).toBeInTheDocument();
     expect(screen.getByText('Path: model')).toBeInTheDocument();
   });
 
@@ -91,13 +91,13 @@ describe('SettingsPanel', () => {
       />
     );
 
-    // Find and interact with a text input
+    // Find and interact with a text input (Response Language)
     const inputs = screen.getAllByPlaceholderText('');
-    const customApiKeyInput = inputs.find(input => input.parentElement.textContent.includes('Custom API Key'));
+    const languageInput = inputs.find(input => input.parentElement.textContent.includes('Response Language'));
 
-    if (customApiKeyInput) {
-      fireEvent.change(customApiKeyInput, { target: { value: 'test-api-key' } });
-      expect(onUpdate).toHaveBeenCalledWith('customApiKey', 'test-api-key');
+    if (languageInput) {
+      fireEvent.change(languageInput, { target: { value: 'French' } });
+      expect(onUpdate).toHaveBeenCalledWith('language', 'French');
     }
   });
 
@@ -107,13 +107,13 @@ describe('SettingsPanel', () => {
       <SettingsPanel
         settings={defaultSettings}
         mode="eli5"
-        section="security"
+        section="general"
         onUpdate={onUpdate}
       />
     );
 
-    // Check for security settings that have toggle types
-    expect(screen.getByText('Enable Security Scanning')).toBeInTheDocument();
+    // Check for general settings that have toggle types
+    expect(screen.getByText('Respect .gitignore')).toBeInTheDocument();
   });
 
   it('renders select dropdown for select type settings', () => {
@@ -127,8 +127,8 @@ describe('SettingsPanel', () => {
       />
     );
 
-    // Theme should be a select dropdown
-    const selects = screen.getAllByDisplayValue('');
+    // Model and Auto Updates Channel should be select dropdowns
+    const selects = screen.getAllByRole('combobox');
     expect(selects.length).toBeGreaterThan(0);
   });
 
@@ -136,17 +136,17 @@ describe('SettingsPanel', () => {
     const onUpdate = vi.fn();
     render(
       <SettingsPanel
-        settings={{ ...defaultSettings, maxTokens: 4096 }}
+        settings={{ ...defaultSettings, cleanupPeriodDays: 30 }}
         mode="eli5"
         section="general"
         onUpdate={onUpdate}
       />
     );
 
-    const numberInputs = screen.getAllByDisplayValue('4096');
+    const numberInputs = screen.getAllByDisplayValue('30');
     if (numberInputs.length > 0) {
-      fireEvent.change(numberInputs[0], { target: { value: '8192' } });
-      expect(onUpdate).toHaveBeenCalledWith('maxTokens', 8192);
+      fireEvent.change(numberInputs[0], { target: { value: '60' } });
+      expect(onUpdate).toHaveBeenCalledWith('cleanupPeriodDays', 60);
     }
   });
 });

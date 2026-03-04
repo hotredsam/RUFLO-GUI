@@ -22,8 +22,18 @@ export default function MCPSection({ settings, mode, onUpdate }) {
   }, [searchQuery, selectedCategory]);
 
   const toggleServer = (serverId) => {
-    const current = enabledServers[serverId] || { enabled: false };
-    onUpdate(`mcpServers.${serverId}.enabled`, !current.enabled);
+    const config = enabledServers[serverId];
+    const isCurrentlyEnabled = config && (config.command || config.type);
+    if (isCurrentlyEnabled) {
+      // Disable: remove the server config entirely
+      onUpdate(`mcpServers.${serverId}`, undefined);
+    } else {
+      // Enable: write full MCP config (command + args) that Claude Code actually reads
+      const server = MCP_SERVERS.find(s => s.id === serverId);
+      if (server) {
+        onUpdate(`mcpServers.${serverId}`, { command: server.command, args: server.args });
+      }
+    }
   };
 
   const updateServerConfig = (serverId, field, value) => {
@@ -72,7 +82,7 @@ export default function MCPSection({ settings, mode, onUpdate }) {
       <div className="space-y-4">
         {filteredServers.map((server) => {
           const config = enabledServers[server.id] || {};
-          const isEnabled = config.enabled || false;
+          const isEnabled = !!(config.command || config.type);
           const isExpanded = expandedServer === server.id;
 
           return (
@@ -111,7 +121,7 @@ export default function MCPSection({ settings, mode, onUpdate }) {
                     <label className="text-xs font-semibold text-slate-400 uppercase mb-1 block">Arguments</label>
                     <input
                       type="text"
-                      value={(config.args || server.args).join(' ')}
+                      value={(config.args || server.args || []).join(' ')}
                       onChange={(e) => updateServerConfig(server.id, 'args', e.target.value.split(' '))}
                       className="w-full text-sm"
                     />

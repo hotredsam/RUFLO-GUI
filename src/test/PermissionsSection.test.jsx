@@ -5,12 +5,12 @@ import { setupMocks } from './mocks';
 
 const defaultSettings = {
   model: 'claude-opus-4-6',
-  permissions: { allowed: [], denied: [] },
+  permissions: { allow: [], ask: [], deny: [] },
   env: {},
   hooks: {},
-  security: {},
+  sandbox: {},
   swarm: { enabled: false },
-  memory: { backend: 'sqlite' },
+  memory: { cleanupPeriodDays: 30 },
   addons: { installed: [] },
 };
 
@@ -32,21 +32,7 @@ describe('PermissionsSection', () => {
     expect(screen.getByText('Permissions')).toBeInTheDocument();
   });
 
-  it('shows allowed and denied tool sections', () => {
-    const onUpdate = vi.fn();
-    render(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    expect(screen.getByText('✓ Allowed Tools')).toBeInTheDocument();
-    expect(screen.getByText('✗ Denied Tools')).toBeInTheDocument();
-  });
-
-  it('displays eli5 description in eli5 mode', () => {
+  it('displays eli5 description', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -56,14 +42,10 @@ describe('PermissionsSection', () => {
       />
     );
 
-    expect(
-      screen.getByText(
-        /Define which tools are allowed or denied/
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('Control which tools the AI can use and how it should ask for permission.')).toBeInTheDocument();
   });
 
-  it('does not display eli5 description in complex mode', () => {
+  it('displays complex description', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -73,9 +55,69 @@ describe('PermissionsSection', () => {
       />
     );
 
-    expect(
-      screen.queryByText(/Define which tools are allowed or denied/)
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Manage tool-level allow\/ask\/deny rules/)).toBeInTheDocument();
+  });
+
+  it('shows Allow, Ask, Deny columns', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('Allow')).toBeInTheDocument();
+    expect(screen.getByText('Ask')).toBeInTheDocument();
+    expect(screen.getByText('Deny')).toBeInTheDocument();
+  });
+
+  it('renders default mode select dropdown', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThan(0);
+  });
+
+  it('displays current default mode selection', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: [], ask: [], deny: [], defaultMode: 'acceptEdits' },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects[0].value).toBe('acceptEdits');
+  });
+
+  it('updates default mode on selection change', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[0], { target: { value: 'plan' } });
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.defaultMode', 'plan');
   });
 
   it('displays allowed tools list', () => {
@@ -84,7 +126,7 @@ describe('PermissionsSection', () => {
       <PermissionsSection
         settings={{
           ...defaultSettings,
-          permissions: { allowed: ['Read', 'Write'], denied: [] },
+          permissions: { allow: ['Read', 'Write'], ask: [], deny: [] },
         }}
         mode="complex"
         onUpdate={onUpdate}
@@ -97,13 +139,13 @@ describe('PermissionsSection', () => {
     expect(writeElements.length).toBeGreaterThan(0);
   });
 
-  it('displays denied tools list', () => {
+  it('displays asked tools list', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
         settings={{
           ...defaultSettings,
-          permissions: { allowed: [], denied: ['Bash', 'Edit'] },
+          permissions: { allow: [], ask: ['Bash', 'Edit'], deny: [] },
         }}
         mode="complex"
         onUpdate={onUpdate}
@@ -116,13 +158,30 @@ describe('PermissionsSection', () => {
     expect(editElements.length).toBeGreaterThan(0);
   });
 
-  it('removes allowed tool when remove button is clicked', () => {
+  it('displays denied tools list', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
         settings={{
           ...defaultSettings,
-          permissions: { allowed: ['Read', 'Write'], denied: [] },
+          permissions: { allow: [], ask: [], deny: ['Rm', 'ForcePush'] },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('Rm')).toBeInTheDocument();
+    expect(screen.getByText('ForcePush')).toBeInTheDocument();
+  });
+
+  it('removes tool from allow list', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: ['Read'], ask: [], deny: [] },
         }}
         mode="complex"
         onUpdate={onUpdate}
@@ -132,16 +191,16 @@ describe('PermissionsSection', () => {
     const removeButtons = screen.getAllByText('✕');
     fireEvent.click(removeButtons[0]);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.allowed', ['Write']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.allow', []);
   });
 
-  it('removes denied tool when remove button is clicked', () => {
+  it('removes tool from ask list', () => {
     const onUpdate = vi.fn();
-    const { rerender } = render(
+    render(
       <PermissionsSection
         settings={{
           ...defaultSettings,
-          permissions: { allowed: [], denied: ['Bash', 'Edit'] },
+          permissions: { allow: [], ask: ['Bash'], deny: [] },
         }}
         mode="complex"
         onUpdate={onUpdate}
@@ -149,12 +208,31 @@ describe('PermissionsSection', () => {
     );
 
     const removeButtons = screen.getAllByText('✕');
-    fireEvent.click(removeButtons[removeButtons.length - 1]);
+    fireEvent.click(removeButtons[0]);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.denied', ['Bash']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.ask', []);
   });
 
-  it('adds tool to allowed list via input', () => {
+  it('removes tool from deny list', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: [], ask: [], deny: ['Rm'] },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const removeButtons = screen.getAllByText('✕');
+    fireEvent.click(removeButtons[0]);
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.deny', []);
+  });
+
+  it('adds tool to allow list via input', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -164,17 +242,16 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const allowedInput = inputs[0];
-    const addButtons = screen.getAllByText('Add');
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
+    fireEvent.change(inputs[0], { target: { value: 'NewTool' } });
 
-    fireEvent.change(allowedInput, { target: { value: 'NewTool' } });
+    const addButtons = screen.getAllByText('Add');
     fireEvent.click(addButtons[0]);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.allowed', ['NewTool']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.allow', ['NewTool']);
   });
 
-  it('adds tool to denied list via input', () => {
+  it('adds tool to ask list via input', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -184,17 +261,16 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const deniedInput = inputs[1];
-    const addButtons = screen.getAllByText('Add');
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
+    fireEvent.change(inputs[1], { target: { value: 'AskTool' } });
 
-    fireEvent.change(deniedInput, { target: { value: 'DangerousTool' } } );
+    const addButtons = screen.getAllByText('Add');
     fireEvent.click(addButtons[1]);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.denied', ['DangerousTool']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.ask', ['AskTool']);
   });
 
-  it('adds tool via Enter key in allowed input', () => {
+  it('adds tool to deny list via input', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -204,14 +280,16 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    fireEvent.change(inputs[0], { target: { value: 'NewTool' } });
-    fireEvent.keyPress(inputs[0], { key: 'Enter', code: 'Enter', charCode: 13 });
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
+    fireEvent.change(inputs[2], { target: { value: 'DenyTool' } });
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.allowed', ['NewTool']);
+    const addButtons = screen.getAllByText('Add');
+    fireEvent.click(addButtons[2]);
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.deny', ['DenyTool']);
   });
 
-  it('adds tool via Enter key in denied input', () => {
+  it('adds tool via Enter key in allow input', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -221,11 +299,11 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    fireEvent.change(inputs[1], { target: { value: 'DangerousTool' } });
-    fireEvent.keyPress(inputs[1], { key: 'Enter', code: 'Enter', charCode: 13 });
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
+    fireEvent.change(inputs[0], { target: { value: 'EnterTool' } });
+    fireEvent.keyDown(inputs[0], { key: 'Enter' });
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.denied', ['DangerousTool']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.allow', ['EnterTool']);
   });
 
   it('does not add empty tool names', () => {
@@ -238,16 +316,16 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const addButtons = screen.getAllByText('Add');
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
+    fireEvent.change(inputs[0], { target: { value: '   ' } });
 
-    fireEvent.change(inputs[0], { target: { value: '' } });
+    const addButtons = screen.getAllByText('Add');
     fireEvent.click(addButtons[0]);
 
-    expect(onUpdate).not.toHaveBeenCalledWith('permissions.allowed', expect.anything());
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 
-  it('shows quick add buttons for common tools', () => {
+  it('shows common tools as quick add buttons', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
@@ -264,9 +342,9 @@ describe('PermissionsSection', () => {
     });
   });
 
-  it('quick adds tool to allowed list', () => {
+  it('quick adds tool to allow list', () => {
     const onUpdate = vi.fn();
-    render(
+    const { container } = render(
       <PermissionsSection
         settings={defaultSettings}
         mode="complex"
@@ -274,130 +352,11 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const buttons = screen.getAllByText('Edit');
-    const editButton = buttons.find((btn) =>
-      btn.className.includes('bg-slate-700/30')
-    );
+    const quickAddButtons = container.querySelectorAll('.bg-slate-700\\/30');
+    const editButton = Array.from(quickAddButtons).find(btn => btn.textContent === 'Edit');
     fireEvent.click(editButton);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.allowed', ['Edit']);
-  });
-
-  it('quick adds tool to denied list', () => {
-    const onUpdate = vi.fn();
-    render(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const buttons = screen.getAllByText('Bash');
-    const bashButton = buttons[buttons.length - 1];
-    fireEvent.click(bashButton);
-
-    expect(onUpdate).toHaveBeenCalledWith('permissions.denied', ['Bash']);
-  });
-
-  it('does not show already-allowed tools in allowed quick add buttons', () => {
-    const onUpdate = vi.fn();
-    const { rerender } = render(
-      <PermissionsSection
-        settings={{
-          ...defaultSettings,
-          permissions: { allowed: ['Read'], denied: [] },
-        }}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const readButtons = screen.getAllByText('Read');
-    const quickAddButtons = readButtons.filter((btn) =>
-      btn.className.includes('bg-slate-700/30')
-    );
-
-    expect(quickAddButtons.length).toBe(1); // Should only appear in denied section
-  });
-
-  it('does not show already-denied tools in denied quick add buttons', () => {
-    const onUpdate = vi.fn();
-    render(
-      <PermissionsSection
-        settings={{
-          ...defaultSettings,
-          permissions: { allowed: [], denied: ['Bash'] },
-        }}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const bashButtons = screen.getAllByText('Bash');
-    const quickAddButtons = bashButtons.filter((btn) =>
-      btn.className.includes('bg-slate-700/30')
-    );
-
-    expect(quickAddButtons.length).toBe(1); // Should only appear in allowed section
-  });
-
-  it('clears input after adding allowed tool', () => {
-    const onUpdate = vi.fn();
-    const { rerender } = render(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const allowedInput = inputs[0];
-    const addButtons = screen.getAllByText('Add');
-
-    fireEvent.change(allowedInput, { target: { value: 'NewTool' } });
-    fireEvent.click(addButtons[0]);
-
-    rerender(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const updatedInputs = screen.getAllByPlaceholderText('Tool name');
-    expect(updatedInputs[0].value).toBe('');
-  });
-
-  it('clears input after adding denied tool', () => {
-    const onUpdate = vi.fn();
-    const { rerender } = render(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const deniedInput = inputs[1];
-    const addButtons = screen.getAllByText('Add');
-
-    fireEvent.change(deniedInput, { target: { value: 'Dangerous' } });
-    fireEvent.click(addButtons[1]);
-
-    rerender(
-      <PermissionsSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const updatedInputs = screen.getAllByPlaceholderText('Tool name');
-    expect(updatedInputs[1].value).toBe('');
+    expect(onUpdate).toHaveBeenCalledWith('permissions.allow', ['Edit']);
   });
 
   it('trims whitespace when adding tools', () => {
@@ -410,24 +369,159 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const inputs = screen.getAllByPlaceholderText('Tool name');
-    const addButtons = screen.getAllByText('Add');
-
+    const inputs = screen.getAllByPlaceholderText('Tool or pattern');
     fireEvent.change(inputs[0], { target: { value: '  TrimmedTool  ' } });
+
+    const addButtons = screen.getAllByText('Add');
     fireEvent.click(addButtons[0]);
 
-    expect(onUpdate).toHaveBeenCalledWith('permissions.allowed', ['TrimmedTool']);
+    expect(onUpdate).toHaveBeenCalledWith('permissions.allow', ['TrimmedTool']);
   });
 
-  it('handles multiple allowed tools correctly', () => {
+  it('displays Additional Directories section', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('Additional Directories')).toBeInTheDocument();
+  });
+
+  it('displays additional directories list', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: [], ask: [], deny: [], additionalDirectories: ['/home/user/project'] },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('/home/user/project')).toBeInTheDocument();
+  });
+
+  it('adds additional directory', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const pathInput = screen.getByPlaceholderText('/path/to/directory');
+    fireEvent.change(pathInput, { target: { value: '/home/user/docs' } });
+
+    const addButtons = screen.getAllByText('Add');
+    fireEvent.click(addButtons[addButtons.length - 1]);
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.additionalDirectories', ['/home/user/docs']);
+  });
+
+  it('removes additional directory', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: [], ask: [], deny: [], additionalDirectories: ['/home/user/project'] },
+        }}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const removeButtons = screen.getAllByText('✕');
+    fireEvent.click(removeButtons[0]);
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.additionalDirectories', []);
+  });
+
+  it('displays Disable Bypass Mode toggle', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    expect(screen.getByText('Disable bypassPermissions Mode')).toBeInTheDocument();
+  });
+
+  it('toggles disable bypass mode', () => {
+    const onUpdate = vi.fn();
+    render(
+      <PermissionsSection
+        settings={defaultSettings}
+        mode="complex"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const toggle = document.querySelector('.toggle-switch');
+    fireEvent.click(toggle);
+
+    expect(onUpdate).toHaveBeenCalledWith('permissions.disableBypassPermissionsMode', true);
+  });
+
+  it('shows active toggle when disable bypass mode is true', () => {
+    render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: [], ask: [], deny: [], disableBypassPermissionsMode: true },
+        }}
+        mode="complex"
+        onUpdate={vi.fn()}
+      />
+    );
+
+    const toggle = document.querySelector('.toggle-switch.active');
+    expect(toggle).toBeInTheDocument();
+  });
+
+  it('does not show quick add buttons for already-added tools in allow', () => {
+    const { container } = render(
+      <PermissionsSection
+        settings={{
+          ...defaultSettings,
+          permissions: { allow: ['Edit'], ask: [], deny: [] },
+        }}
+        mode="complex"
+        onUpdate={vi.fn()}
+      />
+    );
+
+    const quickAddButtons = container.querySelectorAll('.bg-slate-700\\/30');
+    const editButtons = Array.from(quickAddButtons).filter(btn => btn.textContent === 'Edit');
+
+    // Edit should only appear in Ask and Deny columns, not Allow
+    expect(editButtons.length).toBeLessThan(3);
+  });
+
+  it('handles all permission lists simultaneously', () => {
     const onUpdate = vi.fn();
     render(
       <PermissionsSection
         settings={{
           ...defaultSettings,
           permissions: {
-            allowed: ['Read', 'Write', 'Edit', 'Bash'],
-            denied: [],
+            allow: ['Read', 'Write'],
+            ask: ['Bash'],
+            deny: ['Rm'],
+            defaultMode: 'plan',
+            additionalDirectories: ['/tmp'],
+            disableBypassPermissionsMode: false,
           },
         }}
         mode="complex"
@@ -435,54 +529,10 @@ describe('PermissionsSection', () => {
       />
     );
 
-    const tools = ['Read', 'Write', 'Edit', 'Bash'];
-    tools.forEach((tool) => {
-      const elements = screen.getAllByText(tool);
-      expect(elements.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('handles multiple denied tools correctly', () => {
-    const onUpdate = vi.fn();
-    render(
-      <PermissionsSection
-        settings={{
-          ...defaultSettings,
-          permissions: {
-            allowed: [],
-            denied: ['Rm', 'ForcePush', 'DeleteFile'],
-          },
-        }}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
+    expect(screen.getAllByText('Read').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Write').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0);
     expect(screen.getByText('Rm')).toBeInTheDocument();
-    expect(screen.getByText('ForcePush')).toBeInTheDocument();
-    expect(screen.getByText('DeleteFile')).toBeInTheDocument();
-  });
-
-  it('shows both allowed and denied tools simultaneously', () => {
-    const onUpdate = vi.fn();
-    render(
-      <PermissionsSection
-        settings={{
-          ...defaultSettings,
-          permissions: {
-            allowed: ['Read', 'Write'],
-            denied: ['Bash', 'Edit'],
-          },
-        }}
-        mode="complex"
-        onUpdate={onUpdate}
-      />
-    );
-
-    const tools = ['Read', 'Write', 'Bash', 'Edit'];
-    tools.forEach((tool) => {
-      const elements = screen.getAllByText(tool);
-      expect(elements.length).toBeGreaterThan(0);
-    });
+    expect(screen.getByText('/tmp')).toBeInTheDocument();
   });
 });

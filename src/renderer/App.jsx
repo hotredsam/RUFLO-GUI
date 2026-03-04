@@ -14,8 +14,35 @@ import UserGuideSection from './components/UserGuideSection';
 import ModelTiersSection from './components/ModelTiersSection';
 import PluginsSection from './components/PluginsSection';
 import MCPSection from './components/MCPSection';
+import ContextAutopilotSection from './components/ContextAutopilotSection';
+import VerificationSection from './components/VerificationSection';
+import CLAUDEMDSection from './components/CLAUDEMDSection';
+import DiagnosticsSection from './components/DiagnosticsSection';
 import StatusBar from './components/StatusBar';
 import { applyTheme, DEFAULT_THEME } from './lib/themes';
+import { getSettingSideEffects } from './lib/settings-mapper';
+
+function setNestedValue(obj, path, value) {
+  const keys = path.split('.');
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]]) {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  current[keys[keys.length - 1]] = value;
+}
+
+function deleteNestedValue(obj, path) {
+  const keys = path.split('.');
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]]) return;
+    current = current[keys[i]];
+  }
+  delete current[keys[keys.length - 1]];
+}
 
 export default function App() {
   const [settings, setSettings] = useState(null);
@@ -114,17 +141,20 @@ export default function App() {
   const updateSetting = useCallback((path, value) => {
     setSettings((prev) => {
       const updated = JSON.parse(JSON.stringify(prev));
-      const keys = path.split('.');
-      let current = updated;
 
-      for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) {
-          current[keys[i]] = {};
+      // Set the primary value
+      setNestedValue(updated, path, value);
+
+      // Apply real Claude Code side effects
+      const sideEffects = getSettingSideEffects(path, value, updated);
+      sideEffects.forEach(({ path: p, value: v }) => {
+        if (v === undefined) {
+          deleteNestedValue(updated, p);
+        } else {
+          setNestedValue(updated, p, v);
         }
-        current = current[keys[i]];
-      }
+      });
 
-      current[keys[keys.length - 1]] = value;
       return updated;
     });
   }, []);
@@ -172,6 +202,14 @@ export default function App() {
         return <PluginsSection {...props} />;
       case 'mcp':
         return <MCPSection {...props} />;
+      case 'context':
+        return <ContextAutopilotSection {...props} />;
+      case 'verification':
+        return <VerificationSection {...props} />;
+      case 'templates':
+        return <CLAUDEMDSection {...props} />;
+      case 'diagnostics':
+        return <DiagnosticsSection {...props} />;
       default:
         return <SettingsPanel {...props} section="general" />;
     }
@@ -196,6 +234,7 @@ export default function App() {
         </main>
       </div>
       <StatusBar
+        settings={settings}
         settingsPath={settingsPath}
         saveStatus={saveStatus}
         mode={mode}

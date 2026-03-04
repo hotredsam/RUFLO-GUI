@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PluginsSection from '../renderer/components/PluginsSection';
 import { PLUGIN_PACKS } from '../renderer/lib/plugins';
+import { MCP_CONFIGS } from '../renderer/lib/settings-mapper';
 import { setupMocks } from './mocks';
 
 describe('PluginsSection', () => {
@@ -11,9 +12,9 @@ describe('PluginsSection', () => {
     permissions: { allow: [], deny: [] },
     env: {},
     hooks: {},
-    security: {},
+    sandbox: {},
     swarm: { enabled: false },
-    memory: { backend: 'sqlite' },
+    memory: { cleanupPeriodDays: 30 },
     addons: { installed: [] },
     plugins: { installed: [] },
     mcpServers: {},
@@ -27,7 +28,7 @@ describe('PluginsSection', () => {
 
   it('renders Plugin Packs heading', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     expect(screen.getByText('Plugin Packs')).toBeInTheDocument();
@@ -36,7 +37,7 @@ describe('PluginsSection', () => {
 
   it('displays mode-aware description for eli5 mode', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="eli5" />
+      <PluginsSection settings={defaultSettings} mode="eli5" onUpdate={vi.fn()} />
     );
 
     expect(
@@ -46,7 +47,7 @@ describe('PluginsSection', () => {
 
   it('displays mode-aware description for complex mode', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     expect(
@@ -56,7 +57,7 @@ describe('PluginsSection', () => {
 
   it('shows recommended pack prominently', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const recommendedBadges = screen.getAllByText('Recommended');
@@ -65,7 +66,7 @@ describe('PluginsSection', () => {
 
   it('shows all plugin packs', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     PLUGIN_PACKS.forEach((pack) => {
@@ -75,7 +76,7 @@ describe('PluginsSection', () => {
 
   it('displays pack icons', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Check for specific pack icons
@@ -87,7 +88,7 @@ describe('PluginsSection', () => {
 
   it('install button calls window.electronAPI.installAddon', async () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -102,7 +103,7 @@ describe('PluginsSection', () => {
 
   it('install button passes correct install command', async () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -119,7 +120,7 @@ describe('PluginsSection', () => {
 
   it('disables button during installation', async () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -134,7 +135,7 @@ describe('PluginsSection', () => {
 
   it('shows Installed status after successful installation', async () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -147,6 +148,48 @@ describe('PluginsSection', () => {
     });
   });
 
+  it('calls onUpdate with real settings for included addons on pack install', async () => {
+    const mockOnUpdate = vi.fn();
+    render(
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={mockOnUpdate} />
+    );
+
+    // Install the starter pack (includes agentdb-persistence, claude-provider, memory-consolidation)
+    const installButtons = screen.getAllByText(/Install Pack/i);
+    fireEvent.click(installButtons[0]);
+
+    await waitFor(() => {
+      // Should set plugins.installed
+      expect(mockOnUpdate).toHaveBeenCalledWith('plugins.installed', expect.arrayContaining(['starter-pack']));
+      // agentdb-persistence → full sqlite MCP server config
+      expect(mockOnUpdate).toHaveBeenCalledWith('mcpServers.sqlite', MCP_CONFIGS.sqlite);
+      // memory-consolidation → full memory MCP server config
+      expect(mockOnUpdate).toHaveBeenCalledWith('mcpServers.memory', MCP_CONFIGS.memory);
+    });
+  });
+
+  it('calls onUpdate with env vars for developer pack addons', async () => {
+    const mockOnUpdate = vi.fn();
+    render(
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={mockOnUpdate} />
+    );
+
+    // Find the Developer Pack install button (second install button)
+    const installButtons = screen.getAllByText(/Install Pack/i);
+    // Developer pack is the second non-recommended, but first in installButtons after recommended
+    // Let's click the developer pack (index 1 since starter is recommended and index 0)
+    fireEvent.click(installButtons[1]);
+
+    await waitFor(() => {
+      // github-integration → full github MCP server config (HTTP type)
+      expect(mockOnUpdate).toHaveBeenCalledWith('mcpServers.github', MCP_CONFIGS.github);
+      // token-optimizer → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = '50'
+      expect(mockOnUpdate).toHaveBeenCalledWith('env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', '50');
+      // agentdb-persistence → full sqlite MCP server config
+      expect(mockOnUpdate).toHaveBeenCalledWith('mcpServers.sqlite', MCP_CONFIGS.sqlite);
+    });
+  });
+
   it('handles installation failure gracefully', async () => {
     window.electronAPI.installAddon.mockRejectedValueOnce(
       new Error('Installation failed')
@@ -155,7 +198,7 @@ describe('PluginsSection', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -173,7 +216,7 @@ describe('PluginsSection', () => {
 
   it('shows included addons count', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Starter pack has 3 addons
@@ -186,7 +229,7 @@ describe('PluginsSection', () => {
 
   it('displays addon tags for recommended pack', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Non-recommended packs display addon tags. Developer Pack has these addons
@@ -199,7 +242,7 @@ describe('PluginsSection', () => {
 
   it('displays estimated installation time', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Starter pack takes 2-3 minutes - check both recommended and grid versions
@@ -209,7 +252,7 @@ describe('PluginsSection', () => {
 
   it('displays mode-aware pack descriptions', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="eli5" />
+      <PluginsSection settings={defaultSettings} mode="eli5" onUpdate={vi.fn()} />
     );
 
     expect(
@@ -219,7 +262,7 @@ describe('PluginsSection', () => {
 
   it('displays complex descriptions when mode is complex', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     expect(
@@ -229,7 +272,7 @@ describe('PluginsSection', () => {
 
   it('renders recommended pack differently from others', () => {
     const { container } = render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Recommended pack has border-accent/30 and glass-card class
@@ -239,7 +282,7 @@ describe('PluginsSection', () => {
 
   it('tracks installation state per pack independently', async () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);
@@ -259,7 +302,7 @@ describe('PluginsSection', () => {
 
   it('displays pre-configured addon information for all packs', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // AI Power Pack has multiple addons displayed as tags in the grid (note: hyphens are replaced with spaces)
@@ -273,7 +316,7 @@ describe('PluginsSection', () => {
 
   it('shows more addons indicator when pack has more than 4', () => {
     render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     // Full Stack Pack has 14 addons, should show "+10 more"
@@ -288,7 +331,7 @@ describe('PluginsSection', () => {
     };
 
     render(
-      <PluginsSection settings={settingsWithInstalled} mode="complex" />
+      <PluginsSection settings={settingsWithInstalled} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installedButtons = screen.getAllByText('Installed');
@@ -297,7 +340,7 @@ describe('PluginsSection', () => {
 
   it('updates installation state after successful install', async () => {
     const { rerender } = render(
-      <PluginsSection settings={defaultSettings} mode="complex" />
+      <PluginsSection settings={defaultSettings} mode="complex" onUpdate={vi.fn()} />
     );
 
     const installButtons = screen.getAllByText(/Install Pack/i);

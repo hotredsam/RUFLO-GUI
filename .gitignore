@@ -2,3 +2,16 @@ node_modules/
 dist/
 .vite/
 *.log
+
+# Windows reserved filename
+NUL
+
+# Claude Flow artifacts
+.claude-flow/
+
+# Test output files
+out.json
+test-out.json
+test-output.txt
+test-results.txt
+test_output.txt

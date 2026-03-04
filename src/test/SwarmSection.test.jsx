@@ -3,15 +3,23 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import SwarmSection from '../renderer/components/SwarmSection';
 import { setupMocks } from './mocks';
 
-const defaultSettings = {
-  model: 'claude-opus-4-6',
-  permissions: { allow: [], deny: [] },
-  env: {},
-  hooks: {},
-  security: {},
-  swarm: { enabled: false },
-  memory: { backend: 'sqlite' },
-  addons: { installed: [] },
+const defaultProps = {
+  settings: {
+    swarm: {
+      enabled: true,
+      topology: 'hierarchical',
+      maxAgents: 20,
+      teamName: '',
+      coordinationStrategy: 'centralized',
+      agentTypes: ['coordinator', 'coder'],
+      autoScale: false,
+      faultTolerance: false,
+      messageProtocol: 'direct',
+    },
+    env: {},
+  },
+  mode: 'complex',
+  onUpdate: vi.fn(),
 };
 
 describe('SwarmSection', () => {
@@ -19,319 +27,688 @@ describe('SwarmSection', () => {
     setupMocks();
   });
 
-  it('renders Swarm & Agents heading', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Header and Description', () => {
+    it('renders heading "Agent Teams"', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading).toBeInTheDocument();
-    expect(heading.textContent).toBe('Swarm & Agents');
+      const heading = screen.getByRole('heading', { level: 2 });
+      expect(heading.textContent).toBe('Agent Teams');
+    });
+
+    it('renders eli5 description', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Let your AI spawn helper agents to work in parallel on tasks/)).toBeInTheDocument();
+    });
+
+    it('renders complex description', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Control experimental multi-agent team coordination via CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS/)).toBeInTheDocument();
+    });
   });
 
-  it('shows swarm controls', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Enable Toggle', () => {
+    it('renders enable toggle', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Enable Swarm')).toBeInTheDocument();
-    expect(screen.getByText('Topology')).toBeInTheDocument();
-    expect(screen.getByText('Max Agents')).toBeInTheDocument();
-    expect(screen.getByText('Team Name')).toBeInTheDocument();
-    expect(screen.getByText('Coordination Mode')).toBeInTheDocument();
+      expect(screen.getByText('Enable Agent Teams')).toBeInTheDocument();
+    });
+
+    it('clicking enable toggle calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const disabledSettings = {
+        ...defaultProps.settings,
+        swarm: { ...defaultProps.settings.swarm, enabled: false },
+      };
+
+      const { container } = render(
+        <SwarmSection
+          settings={disabledSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const toggle = container.querySelector('.toggle-switch');
+      fireEvent.click(toggle);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.enabled', true);
+    });
+
+    it('shows active toggle when swarm enabled', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const activeToggle = container.querySelector('.toggle-switch.active');
+      expect(activeToggle).toBeInTheDocument();
+    });
   });
 
-  it('displays mode-aware label for swarm enable toggle', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Topology Selection', () => {
+    it('renders all 6 topology cards', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Enable Team Mode')).toBeInTheDocument();
-    expect(screen.getByText('Allow multiple AI agents to work together on tasks')).toBeInTheDocument();
+      expect(screen.getByText('Hierarchical')).toBeInTheDocument();
+      expect(screen.getByText('Mesh')).toBeInTheDocument();
+      expect(screen.getByText('Ring')).toBeInTheDocument();
+      expect(screen.getByText('Star')).toBeInTheDocument();
+      expect(screen.getByText('Hybrid')).toBeInTheDocument();
+      expect(screen.getByText('Adaptive')).toBeInTheDocument();
+    });
+
+    it('selected topology has visual indicator', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const selectedCard = container.querySelector('.ring-2.ring-accent');
+      expect(selectedCard).toBeInTheDocument();
+      expect(selectedCard.textContent).toContain('Hierarchical');
+    });
+
+    it('clicking topology card calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const meshButton = screen.getByText('Mesh').closest('div[class*="border-2"]');
+      fireEvent.click(meshButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.topology', 'mesh');
+    });
+
+    it('topology cards show correct icons', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const icons = container.querySelectorAll('div[class*="text-2xl"]');
+      expect(icons.length).toBeGreaterThan(0);
+    });
   });
 
-  it('displays complex mode label for swarm enable toggle', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Team Name Input', () => {
+    it('team name input renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Enable Swarm')).toBeInTheDocument();
+      expect(screen.getByText('Team Name')).toBeInTheDocument();
+    });
+
+    it('team name input has correct placeholder', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('e.g., DevOps Team, Research Squad');
+      expect(input).toBeInTheDocument();
+    });
+
+    it('changing team name calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const teamNameInput = screen.getByPlaceholderText('e.g., DevOps Team, Research Squad');
+      fireEvent.change(teamNameInput, { target: { value: 'ML Team' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.teamName', 'ML Team');
+    });
+
+    it('displays custom team name', () => {
+      const { onUpdate } = defaultProps;
+      const customSettings = {
+        ...defaultProps.settings,
+        swarm: { ...defaultProps.settings.swarm, teamName: 'DevOps Squad' },
+      };
+
+      render(
+        <SwarmSection
+          settings={customSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const input = screen.getByDisplayValue('DevOps Squad');
+      expect(input).toBeInTheDocument();
+    });
   });
 
-  it('displays mode-aware descriptions for topology in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Max Agents Slider', () => {
+    it('max agents slider renders with default value', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Team Structure')).toBeInTheDocument();
-    expect(screen.getByText('How agents communicate with each other')).toBeInTheDocument();
+      const slider = container.querySelector('input[type="range"]');
+      expect(slider).toBeInTheDocument();
+      expect(slider.value).toBe('20');
+    });
+
+    it('changing max agents calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const slider = container.querySelector('input[type="range"]');
+      fireEvent.change(slider, { target: { value: '30' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.maxAgents', 30);
+    });
+
+    it('max agents shows current value label', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText('20')).toBeInTheDocument();
+    });
+
+    it('max agents slider has correct min and max', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const slider = container.querySelector('input[type="range"]');
+      expect(slider.min).toBe('1');
+      expect(slider.max).toBe('50');
+    });
   });
 
-  it('displays complex mode label for topology', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Coordination Strategy Dropdown', () => {
+    it('coordination strategy dropdown renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Topology')).toBeInTheDocument();
+      expect(screen.getByText('Coordination Strategy')).toBeInTheDocument();
+    });
+
+    it('coordination strategy dropdown has correct options', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const selects = container.querySelectorAll('select');
+      const coordSelect = Array.from(selects).find(
+        (sel) => sel.value === 'centralized'
+      );
+      expect(coordSelect).toBeInTheDocument();
+    });
+
+    it('changing coordination strategy calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const selects = container.querySelectorAll('select');
+      const coordSelect = Array.from(selects).find(
+        (sel) => sel.value === 'centralized'
+      );
+      fireEvent.change(coordSelect, { target: { value: 'distributed' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.coordinationStrategy', 'distributed');
+    });
   });
 
-  it('displays mode-aware descriptions for max agents in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Agent Type Selection', () => {
+    it('agent type checkboxes render (8 types)', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Maximum Team Size')).toBeInTheDocument();
-    expect(screen.getByText('Maximum number of agents that can work together (1-20)')).toBeInTheDocument();
+      expect(screen.getByText('Coordinator')).toBeInTheDocument();
+      expect(screen.getByText('Researcher')).toBeInTheDocument();
+      expect(screen.getByText('Coder')).toBeInTheDocument();
+      expect(screen.getByText('Analyst')).toBeInTheDocument();
+      expect(screen.getByText('Architect')).toBeInTheDocument();
+      expect(screen.getByText('Tester')).toBeInTheDocument();
+      expect(screen.getByText('Reviewer')).toBeInTheDocument();
+      expect(screen.getByText('Optimizer')).toBeInTheDocument();
+    });
+
+    it('checked agent types match settings', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      const checkedBoxes = Array.from(checkboxes).filter((cb) => cb.checked);
+
+      expect(checkedBoxes.length).toBe(2);
+    });
+
+    it('clicking agent type checkbox calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      const researcherCheckbox = Array.from(checkboxes).find(
+        (cb) => cb.parentElement.textContent.includes('Researcher')
+      );
+      fireEvent.click(researcherCheckbox);
+
+      expect(mockOnUpdate).toHaveBeenCalled();
+    });
+
+    it('agent type cards show correct icons', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const agentLabels = container.querySelectorAll('label[class*="flex"]');
+      expect(agentLabels.length).toBeGreaterThanOrEqual(8);
+    });
   });
 
-  it('displays mode-aware descriptions for coordination mode in eli5 mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="eli5"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Message Protocol Dropdown', () => {
+    it('message protocol dropdown renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('How Agents Work Together')).toBeInTheDocument();
-    expect(screen.getByText('Sequential: Take turns, Parallel: Work at same time, Adaptive: Automatically choose best approach')).toBeInTheDocument();
+      expect(screen.getByText('Message Protocol')).toBeInTheDocument();
+    });
+
+    it('changing message protocol calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const selects = container.querySelectorAll('select');
+      const protocolSelect = Array.from(selects).find(
+        (sel) => sel.value === 'direct'
+      );
+      fireEvent.change(protocolSelect, { target: { value: 'broadcast' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.messageProtocol', 'broadcast');
+    });
+
+    it('message protocol dropdown has correct options', () => {
+      const { onUpdate } = defaultProps;
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const selects = container.querySelectorAll('select');
+      const protocolSelect = Array.from(selects).find(
+        (sel) => sel.value === 'direct'
+      );
+      expect(protocolSelect).toBeInTheDocument();
+    });
   });
 
-  it('displays complex mode label for coordination mode', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Auto-Scale Toggle', () => {
+    it('auto-scale toggle renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    expect(screen.getByText('Coordination Mode')).toBeInTheDocument();
+      expect(screen.getByText('Auto-Scale Agents')).toBeInTheDocument();
+    });
+
+    it('clicking auto-scale calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const toggles = container.querySelectorAll('.toggle-switch');
+      fireEvent.click(toggles[1]);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.autoScale', true);
+    });
+
+    it('shows active toggle when auto-scale enabled', () => {
+      const { onUpdate } = defaultProps;
+      const autoScaleSettings = {
+        ...defaultProps.settings,
+        swarm: { ...defaultProps.settings.swarm, autoScale: true },
+      };
+
+      const { container } = render(
+        <SwarmSection
+          settings={autoScaleSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const activeToggles = container.querySelectorAll('.toggle-switch.active');
+      expect(activeToggles.length).toBeGreaterThan(1);
+    });
   });
 
-  it('toggles swarm enabled state', () => {
-    const mockOnUpdate = vi.fn();
-    const swarmSettings = {
-      ...defaultSettings,
-      swarm: { enabled: false },
-    };
+  describe('Fault Tolerance Toggle', () => {
+    it('fault tolerance toggle renders', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const { container } = render(
-      <SwarmSection
-        settings={swarmSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      expect(screen.getByText('Fault Tolerance')).toBeInTheDocument();
+    });
 
-    const toggleSwitch = container.querySelector('.toggle-switch');
-    fireEvent.click(toggleSwitch);
+    it('clicking fault tolerance calls onUpdate', () => {
+      const mockOnUpdate = vi.fn();
+      const { container } = render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('swarm.enabled', true);
+      const toggles = container.querySelectorAll('.toggle-switch');
+      fireEvent.click(toggles[2]);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('swarm.faultTolerance', true);
+    });
+
+    it('shows active toggle when fault tolerance enabled', () => {
+      const { onUpdate } = defaultProps;
+      const ftSettings = {
+        ...defaultProps.settings,
+        swarm: { ...defaultProps.settings.swarm, faultTolerance: true },
+      };
+
+      const { container } = render(
+        <SwarmSection
+          settings={ftSettings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      const activeToggles = container.querySelectorAll('.toggle-switch.active');
+      expect(activeToggles.length).toBeGreaterThan(1);
+    });
   });
 
-  it('renders topology options', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('Mode Switching', () => {
+    it('eli5 mode shows simplified labels', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const topologySelect = screen.getAllByRole('combobox')[0];
-    fireEvent.click(topologySelect);
+      expect(screen.getByText(/How many AI helpers can work at the same time/)).toBeInTheDocument();
+    });
 
-    expect(screen.getByText(/Star/)).toBeInTheDocument();
-    expect(screen.getByText(/Mesh/)).toBeInTheDocument();
-    expect(screen.getByText(/Hierarchical/)).toBeInTheDocument();
+    it('complex mode shows technical labels', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Maximum concurrent agent instances in a swarm session/)).toBeInTheDocument();
+    });
   });
 
-  it('updates topology on selection change', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+  describe('About Section', () => {
+    it('renders about section', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    const topologySelect = screen.getAllByRole('combobox')[0];
-    fireEvent.change(topologySelect, { target: { value: 'mesh' } });
+      expect(screen.getByText('About Agent Teams')).toBeInTheDocument();
+    });
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('swarm.topology', 'mesh');
+    it('about section shows mode-appropriate content in eli5', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="eli5"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/Agent teams let Claude Code create multiple AI helpers/)).toBeInTheDocument();
+    });
+
+    it('about section shows mode-appropriate content in complex', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
+
+      expect(screen.getByText(/CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1/)).toBeInTheDocument();
+    });
   });
 
-  it('displays topology in complex mode', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithSwarm = {
-      ...defaultSettings,
-      swarm: { enabled: true, topology: 'mesh' },
-    };
+  describe('Edge Cases and Robustness', () => {
+    it('handles missing swarm settings gracefully', () => {
+      const mockOnUpdate = vi.fn();
+      const noSwarmSettings = {
+        env: {},
+        swarm: undefined,
+      };
 
-    render(
-      <SwarmSection
-        settings={settingsWithSwarm}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+      render(
+        <SwarmSection
+          settings={noSwarmSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
 
-    expect(screen.getByText(/Current: mesh/)).toBeInTheDocument();
-  });
+      expect(screen.getByText('Agent Teams')).toBeInTheDocument();
+    });
 
-  it('updates max agents on range slider change', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
+    it('renders with disabled state when swarm not enabled', () => {
+      const mockOnUpdate = vi.fn();
+      const disabledSettings = {
+        ...defaultProps.settings,
+        swarm: { ...defaultProps.settings.swarm, enabled: false },
+      };
 
-    const maxAgentsSlider = screen.getByRole('slider');
-    fireEvent.change(maxAgentsSlider, { target: { value: '10' } });
+      const { container } = render(
+        <SwarmSection
+          settings={disabledSettings}
+          mode="complex"
+          onUpdate={mockOnUpdate}
+        />
+      );
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('swarm.maxAgents', 10);
-  });
+      const toggles = container.querySelectorAll('.toggle-switch');
+      const enableToggle = toggles[0];
+      expect(enableToggle).not.toHaveClass('active');
+    });
 
-  it('displays current max agents value', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithSwarm = {
-      ...defaultSettings,
-      swarm: { enabled: true, maxAgents: 8 },
-    };
+    it('renders all required form fields', () => {
+      const { onUpdate } = defaultProps;
+      render(
+        <SwarmSection
+          settings={defaultProps.settings}
+          mode="complex"
+          onUpdate={onUpdate}
+        />
+      );
 
-    render(
-      <SwarmSection
-        settings={settingsWithSwarm}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByDisplayValue('8')).toBeInTheDocument();
-  });
-
-  it('displays default max agents value when not specified', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const maxAgentsSlider = screen.getByRole('slider');
-    expect(maxAgentsSlider.value).toBe('5');
-  });
-
-  it('updates team name on input change', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const teamNameInput = screen.getByPlaceholderText('e.g., Engineering Team');
-    fireEvent.change(teamNameInput, { target: { value: 'My Team' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith('swarm.teamName', 'My Team');
-  });
-
-  it('displays existing team name', () => {
-    const mockOnUpdate = vi.fn();
-    const settingsWithSwarm = {
-      ...defaultSettings,
-      swarm: { enabled: true, teamName: 'Engineering Team' },
-    };
-
-    render(
-      <SwarmSection
-        settings={settingsWithSwarm}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    expect(screen.getByDisplayValue('Engineering Team')).toBeInTheDocument();
-  });
-
-  it('updates coordination mode on selection change', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const coordinationModeSelect = screen.getAllByRole('combobox')[1];
-    fireEvent.change(coordinationModeSelect, { target: { value: 'parallel' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith('swarm.coordinationMode', 'parallel');
-  });
-
-  it('renders coordination mode options', () => {
-    const mockOnUpdate = vi.fn();
-    render(
-      <SwarmSection
-        settings={defaultSettings}
-        mode="complex"
-        onUpdate={mockOnUpdate}
-      />
-    );
-
-    const coordinationModeSelect = screen.getAllByRole('combobox')[1];
-    fireEvent.click(coordinationModeSelect);
-
-    expect(screen.getByText('Sequential')).toBeInTheDocument();
-    expect(screen.getByText('Parallel')).toBeInTheDocument();
-    expect(screen.getByText('Adaptive')).toBeInTheDocument();
+      expect(screen.getByText('Enable Agent Teams')).toBeInTheDocument();
+      expect(screen.getByText('Agent Network Topology')).toBeInTheDocument();
+      expect(screen.getByText('Team Name')).toBeInTheDocument();
+      expect(screen.getByText('Maximum Concurrent Agents')).toBeInTheDocument();
+      expect(screen.getByText('Coordination Strategy')).toBeInTheDocument();
+      expect(screen.getByText('Agent Types to Enable')).toBeInTheDocument();
+      expect(screen.getByText('Message Protocol')).toBeInTheDocument();
+      expect(screen.getByText('Auto-Scale Agents')).toBeInTheDocument();
+      expect(screen.getByText('Fault Tolerance')).toBeInTheDocument();
+    });
   });
 });
