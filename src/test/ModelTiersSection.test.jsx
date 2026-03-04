@@ -205,6 +205,17 @@ describe('ModelTiersSection', () => {
     expect(onUpdate).toHaveBeenCalledWith('modelTiers.routing.maxCostPerRequest', 1.5);
   });
 
+  it('calls onUpdate with undefined when max cost per request is cleared', () => {
+    const onUpdate = vi.fn();
+    const props = { ...defaultProps, onUpdate };
+    render(<ModelTiersSection {...props} />);
+
+    const costInput = screen.getByDisplayValue('0.5');
+    fireEvent.change(costInput, { target: { value: '' } });
+
+    expect(onUpdate).toHaveBeenCalledWith('modelTiers.routing.maxCostPerRequest', undefined);
+  });
+
   // Test 14: Provider API key status shows connected for configured providers
   it('shows green status for configured providers', () => {
     const props = {

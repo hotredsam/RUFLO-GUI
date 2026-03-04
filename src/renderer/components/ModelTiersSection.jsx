@@ -274,7 +274,7 @@ export default function ModelTiersSection({ settings, mode, onUpdate }) {
               min="0"
               step="0.01"
               value={getMaxCostPerRequest()}
-              onChange={(e) => onUpdate('modelTiers.routing.maxCostPerRequest', parseFloat(e.target.value) || 0)}
+              onChange={(e) => onUpdate('modelTiers.routing.maxCostPerRequest', e.target.value !== '' ? parseFloat(e.target.value) : undefined)}
               className="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
