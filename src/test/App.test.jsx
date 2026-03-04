@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from '../renderer/App';
 import { setupMocks, mockElectronAPI } from './mocks';
 
@@ -293,9 +293,15 @@ describe('App', () => {
   it('maintains settings state across renders', async () => {
     const { rerender } = render(<App />);
 
+    await waitFor(() => {
+      expect(mockElectronAPI.readSettings).toHaveBeenCalled();
+    });
+
     const firstSettings = mockElectronAPI.readSettings.mock.results[0];
 
-    rerender(<App />);
+    await act(async () => {
+      rerender(<App />);
+    });
 
     // Settings should still be loaded and consistent
     expect(mockElectronAPI.readSettings).toHaveBeenCalled();

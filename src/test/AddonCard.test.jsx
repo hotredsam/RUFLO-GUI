@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import AddonCard from '../renderer/components/AddonCard';
 import { setupMocks, mockElectronAPI } from './mocks';
@@ -349,7 +349,7 @@ describe('AddonCard', () => {
     expect(screen.getByText('Tools')).toBeInTheDocument();
   });
 
-  it('stops propagation when install button is clicked', () => {
+  it('stops propagation when install button is clicked', async () => {
     mockElectronAPI.installAddon.mockResolvedValue({ success: true });
 
     render(
@@ -365,7 +365,9 @@ describe('AddonCard', () => {
     const event = new MouseEvent('click', { bubbles: true });
     const stopPropagationSpy = vi.spyOn(event, 'stopPropagation');
 
-    fireEvent(installButton, event);
+    await act(async () => {
+      fireEvent(installButton, event);
+    });
 
     expect(stopPropagationSpy).toHaveBeenCalled();
   });
