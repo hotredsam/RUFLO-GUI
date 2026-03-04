@@ -81,7 +81,7 @@ export default function EnvVarsSection({ settings, mode, onUpdate }) {
                 <input
                   type={setting.type === 'number' ? 'number' : 'text'}
                   value={value}
-                  onChange={(e) => onUpdate(`env.${setting.key}`, e.target.value)}
+                  onChange={(e) => onUpdate(`env.${setting.key}`, e.target.value || undefined)}
                   placeholder={setting.placeholder || ''}
                 />
               )}

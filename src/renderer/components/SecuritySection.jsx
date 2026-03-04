@@ -340,7 +340,7 @@ export default function SecuritySection({ settings, mode, onUpdate }) {
                 <input
                   type="text"
                   value={security.auditLogPath || '~/.claude/audit.log'}
-                  onChange={(e) => onUpdate('security.auditLogPath', e.target.value)}
+                  onChange={(e) => onUpdate('security.auditLogPath', e.target.value || undefined)}
                   placeholder="~/.claude/audit.log"
                   className="w-full"
                 />
