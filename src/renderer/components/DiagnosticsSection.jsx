@@ -174,7 +174,7 @@ export default function DiagnosticsSection({ settings, mode, onUpdate }) {
               onChange={(e) =>
                 onUpdate(
                   'diagnostics.healthCheckInterval',
-                  e.target.value ? parseInt(e.target.value) : 60
+                  e.target.value ? parseInt(e.target.value) : undefined
                 )
               }
               min="10"

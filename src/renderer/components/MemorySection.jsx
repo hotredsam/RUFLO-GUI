@@ -133,7 +133,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
               type="number"
               value={memory.maxSizeMB !== undefined ? memory.maxSizeMB : 500}
               onChange={(e) =>
-                onUpdate('memory.maxSizeMB', e.target.value ? parseInt(e.target.value) : 500)
+                onUpdate('memory.maxSizeMB', e.target.value ? parseInt(e.target.value) : undefined)
               }
               min="10"
               max="10000"
@@ -164,7 +164,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
               type="number"
               value={memory.retentionDays !== undefined ? memory.retentionDays : 90}
               onChange={(e) =>
-                onUpdate('memory.retentionDays', e.target.value ? parseInt(e.target.value) : 90)
+                onUpdate('memory.retentionDays', e.target.value ? parseInt(e.target.value) : undefined)
               }
               min="1"
               max="365"
@@ -195,7 +195,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
               type="number"
               value={memory.cleanupPeriodDays !== undefined ? memory.cleanupPeriodDays : 30}
               onChange={(e) =>
-                onUpdate('memory.cleanupPeriodDays', e.target.value ? parseInt(e.target.value) : 30)
+                onUpdate('memory.cleanupPeriodDays', e.target.value ? parseInt(e.target.value) : undefined)
               }
               min="1"
               max="365"
@@ -251,7 +251,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
               onChange={(e) =>
                 onUpdate(
                   'memory.consolidationInterval',
-                  e.target.value ? parseInt(e.target.value) : 24
+                  e.target.value ? parseInt(e.target.value) : undefined
                 )
               }
               min="1"
@@ -333,7 +333,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
                       onChange={(e) =>
                         onUpdate(
                           'memory.hnswDimensions',
-                          e.target.value ? parseInt(e.target.value) : 384
+                          e.target.value ? parseInt(e.target.value) : undefined
                         )
                       }
                       min="64"
@@ -362,7 +362,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
                       type="number"
                       value={memory.hnswM !== undefined ? memory.hnswM : 16}
                       onChange={(e) =>
-                        onUpdate('memory.hnswM', e.target.value ? parseInt(e.target.value) : 16)
+                        onUpdate('memory.hnswM', e.target.value ? parseInt(e.target.value) : undefined)
                       }
                       min="4"
                       max="64"
@@ -394,7 +394,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
                       onChange={(e) =>
                         onUpdate(
                           'memory.hnswEfConstruction',
-                          e.target.value ? parseInt(e.target.value) : 200
+                          e.target.value ? parseInt(e.target.value) : undefined
                         )
                       }
                       min="50"

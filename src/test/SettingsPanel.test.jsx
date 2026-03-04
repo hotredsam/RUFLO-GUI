@@ -149,4 +149,24 @@ describe('SettingsPanel', () => {
       expect(onUpdate).toHaveBeenCalledWith('cleanupPeriodDays', 60);
     }
   });
+
+  it('calls onUpdate with undefined when number input is cleared', () => {
+    const onUpdate = vi.fn();
+    render(
+      <SettingsPanel
+        settings={{ ...defaultSettings, cleanupPeriodDays: 30 }}
+        mode="complex"
+        section="general"
+        onUpdate={onUpdate}
+      />
+    );
+
+    // Use the same number input as the "handles number input changes" test
+    const numberInputs = screen.getAllByDisplayValue('30');
+    expect(numberInputs.length).toBeGreaterThan(0);
+    // Clearing a number input should call onUpdate with undefined (not null/default)
+    // so the key gets deleted from settings.json via deleteNestedValue
+    fireEvent.change(numberInputs[0], { target: { value: '' } });
+    expect(onUpdate).toHaveBeenCalledWith(expect.any(String), undefined);
+  });
 });
