@@ -186,6 +186,43 @@ describe('getSettingSideEffects', () => {
     ]);
   });
 
+  // --- security.auditLogPath ---
+  it('security.auditLogPath update propagates to CLAUDE_AUDIT_LOG_PATH when auditLogging is enabled', () => {
+    const settingsWithAuditEnabled = {
+      ...baseSettings,
+      security: { auditLogging: true, auditLogPath: '/old/path.log' },
+    };
+    const effects = getSettingSideEffects('security.auditLogPath', '/new/path.log', settingsWithAuditEnabled);
+    expect(effects).toEqual([
+      { path: 'env.CLAUDE_AUDIT_LOG_PATH', value: '/new/path.log' },
+    ]);
+  });
+
+  it('security.auditLogPath cleared falls back to default when auditLogging is enabled', () => {
+    const settingsWithAuditEnabled = {
+      ...baseSettings,
+      security: { auditLogging: true, auditLogPath: '/some/path.log' },
+    };
+    const effects = getSettingSideEffects('security.auditLogPath', undefined, settingsWithAuditEnabled);
+    expect(effects).toEqual([
+      { path: 'env.CLAUDE_AUDIT_LOG_PATH', value: '~/.claude/audit.log' },
+    ]);
+  });
+
+  it('security.auditLogPath change has no effect when auditLogging is disabled', () => {
+    const settingsWithAuditDisabled = {
+      ...baseSettings,
+      security: { auditLogging: false, auditLogPath: '' },
+    };
+    const effects = getSettingSideEffects('security.auditLogPath', '/new/path.log', settingsWithAuditDisabled);
+    expect(effects).toEqual([]);
+  });
+
+  it('security.auditLogPath change has no effect when auditLogging is not set', () => {
+    const effects = getSettingSideEffects('security.auditLogPath', '/new/path.log', baseSettings);
+    expect(effects).toEqual([]);
+  });
+
   // --- modelTiers.primary.provider ---
   it('modelTiers.primary.provider = ollama sets default OLLAMA_HOST when not configured', () => {
     const effects = getSettingSideEffects('modelTiers.primary.provider', 'ollama', baseSettings);

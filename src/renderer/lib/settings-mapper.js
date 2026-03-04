@@ -98,6 +98,15 @@ export function getSettingSideEffects(path, value, _currentSettings) {
     }
   }
 
+  if (path === 'security.auditLogPath') {
+    if (_currentSettings?.security?.auditLogging) {
+      effects.push({
+        path: 'env.CLAUDE_AUDIT_LOG_PATH',
+        value: value || '~/.claude/audit.log',
+      });
+    }
+  }
+
   if (path === 'modelTiers.primary.provider') {
     if (value === 'ollama' && !_currentSettings?.env?.OLLAMA_HOST) {
       effects.push({ path: 'env.OLLAMA_HOST', value: 'http://localhost:11434' });
