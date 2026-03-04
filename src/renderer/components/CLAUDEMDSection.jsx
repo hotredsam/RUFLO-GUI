@@ -95,7 +95,7 @@ export default function CLAUDEMDSection({ settings, mode, onUpdate }) {
           <input
             type="text"
             value={claudemd.templatePath !== undefined ? claudemd.templatePath : ''}
-            onChange={(e) => onUpdate('claudemd.templatePath', e.target.value)}
+            onChange={(e) => onUpdate('claudemd.templatePath', e.target.value || undefined)}
             placeholder="/path/to/custom/claude.md"
             className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />

@@ -101,7 +101,7 @@ export default function SwarmSection({ settings, mode, onUpdate }) {
           <input
             type="text"
             value={swarm.teamName || ''}
-            onChange={(e) => onUpdate('swarm.teamName', e.target.value)}
+            onChange={(e) => onUpdate('swarm.teamName', e.target.value || undefined)}
             placeholder="e.g., DevOps Team, Research Squad"
             className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent"
           />

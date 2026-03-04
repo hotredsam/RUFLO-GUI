@@ -106,7 +106,7 @@ export default function MemorySection({ settings, mode, onUpdate }) {
           <input
             type="text"
             value={memory.path !== undefined ? memory.path : '~/.claude/memory'}
-            onChange={(e) => onUpdate('memory.path', e.target.value)}
+            onChange={(e) => onUpdate('memory.path', e.target.value || undefined)}
             placeholder="~/.claude/memory"
           />
         </div>

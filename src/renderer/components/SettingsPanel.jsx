@@ -30,7 +30,7 @@ export default function SettingsPanel({ settings, mode, section, onUpdate }) {
           <input
             type="text"
             value={value || ''}
-            onChange={(e) => onUpdate(setting.path, e.target.value)}
+            onChange={(e) => onUpdate(setting.path, e.target.value || undefined)}
             placeholder={setting.placeholder || ''}
           />
         );
@@ -48,7 +48,7 @@ export default function SettingsPanel({ settings, mode, section, onUpdate }) {
 
       case 'select':
         return (
-          <select value={value || ''} onChange={(e) => onUpdate(setting.path, e.target.value)}>
+          <select value={value || ''} onChange={(e) => onUpdate(setting.path, e.target.value || undefined)}>
             <option value="">Select...</option>
             {setting.options?.map((opt) => (
               <option key={opt} value={opt}>

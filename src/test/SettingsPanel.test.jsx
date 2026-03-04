@@ -169,4 +169,40 @@ describe('SettingsPanel', () => {
     fireEvent.change(numberInputs[0], { target: { value: '' } });
     expect(onUpdate).toHaveBeenCalledWith(expect.any(String), undefined);
   });
+
+  it('calls onUpdate with undefined when text input is cleared', () => {
+    const onUpdate = vi.fn();
+    render(
+      <SettingsPanel
+        settings={{ ...defaultSettings, language: 'French' }}
+        mode="eli5"
+        section="general"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const inputs = screen.getAllByDisplayValue('French');
+    expect(inputs.length).toBeGreaterThan(0);
+    // Clearing a text input should call onUpdate with undefined so the key is deleted
+    fireEvent.change(inputs[0], { target: { value: '' } });
+    expect(onUpdate).toHaveBeenCalledWith(expect.any(String), undefined);
+  });
+
+  it('calls onUpdate with undefined when select is reset to placeholder', () => {
+    const onUpdate = vi.fn();
+    render(
+      <SettingsPanel
+        settings={{ ...defaultSettings, model: 'claude-opus-4-6' }}
+        mode="eli5"
+        section="general"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThan(0);
+    // Selecting the empty "Select..." option should call onUpdate with undefined
+    fireEvent.change(selects[0], { target: { value: '' } });
+    expect(onUpdate).toHaveBeenCalledWith(expect.any(String), undefined);
+  });
 });
