@@ -143,7 +143,11 @@ export default function App() {
       const updated = JSON.parse(JSON.stringify(prev));
 
       // Set the primary value
-      setNestedValue(updated, path, value);
+      if (value === undefined) {
+        deleteNestedValue(updated, path);
+      } else {
+        setNestedValue(updated, path, value);
+      }
 
       // Apply real Claude Code side effects
       const sideEffects = getSettingSideEffects(path, value, updated);
