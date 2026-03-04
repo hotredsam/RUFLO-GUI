@@ -1,532 +1,745 @@
-// ELI5 Settings Metadata - User-friendly descriptions for all Claude Code settings
+// ELI5 Settings Metadata - User-friendly descriptions for Claude Code settings
+// Only includes settings that actually exist in ~/.claude/settings.json
 
-const SETTINGS_META = {
-  'model': {
+const SETTINGS_META = [
+  // ===== GENERAL SECTION =====
+  {
+    path: 'model',
+    section: 'general',
     label: 'Default Model',
-    eli5: 'Which AI model to use when you ask for help. Choose Claude, GPT, or another available model.',
-    complex: 'The default LLM model identifier used for code analysis, generation, and problem-solving tasks.',
     type: 'select',
-    options: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5', 'gpt-4', 'gpt-4-turbo', 'gemini-pro'],
-    section: 'general',
-    defaultValue: 'claude-opus-4-6'
+    options: ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5-20251001'],
+    default: 'claude-sonnet-4-6',
+    eli5: 'Which Claude model to use for your tasks. Sonnet is balanced, Opus is most capable, Haiku is fastest and cheapest.',
+    complex: 'The default LLM model identifier used for code analysis, generation, and reasoning tasks. Opus has the highest capability but costs more, Sonnet is balanced, Haiku is optimized for speed and cost.'
   },
-  'customApiKey': {
-    label: 'Custom API Key',
-    eli5: 'Your secret key to use the AI service. Keep this private and never share it.',
-    complex: 'Authentication token for accessing third-party LLM APIs. Should be stored securely and never committed to version control.',
+  {
+    path: 'language',
+    section: 'general',
+    label: 'Response Language',
     type: 'text',
-    section: 'general',
-    defaultValue: ''
+    default: 'English',
+    eli5: 'What language Claude should use when responding to you.',
+    complex: 'Language preference for Claude responses. Can be any ISO 639-1 language code or natural language name (e.g., "en", "fr", "Japanese").'
   },
-  'maxTokens': {
-    label: 'Maximum Output Tokens',
-    eli5: 'The longest response the AI can give. Higher numbers mean longer responses but cost more.',
-    complex: 'Maximum number of tokens the model can generate in a single response. Affects API costs and response length.',
+  {
+    path: 'outputStyle',
+    section: 'general',
+    label: 'Output Style',
+    type: 'text',
+    default: '',
+    eli5: 'How you prefer Claude to format its responses (e.g., concise, detailed, with examples).',
+    complex: 'Preferred output formatting and verbosity level. Examples: "concise", "detailed", "with-examples", "academic", "casual".'
+  },
+  {
+    path: 'cleanupPeriodDays',
+    section: 'general',
+    label: 'Cleanup Period (Days)',
     type: 'number',
-    section: 'general',
-    defaultValue: 4096
+    default: 30,
+    eli5: 'How many days before old temporary files and data are automatically deleted.',
+    complex: 'Number of days before old cached data, temporary files, and session artifacts are cleaned up automatically. Set to 0 to disable.'
   },
-  'temperature': {
-    label: 'Temperature (Creativity)',
-    eli5: 'How creative the AI should be. Lower (0) = focused and predictable, Higher (1) = creative and varied.',
-    complex: 'Sampling temperature controlling output randomness. Range 0.0-2.0. Lower values make output more deterministic, higher values increase diversity.',
-    type: 'number',
+  {
+    path: 'autoUpdatesChannel',
     section: 'general',
-    defaultValue: 0.7
-  },
-  'preferredNotifChannel': {
-    label: 'Notification Channel',
-    eli5: 'How you want to be notified about important updates: desktop notification, console log, or both.',
-    complex: 'Primary notification delivery mechanism for task completion and status updates (desktop, console, or combined).',
+    label: 'Auto Updates Channel',
     type: 'select',
-    options: ['desktop', 'console', 'both'],
+    options: ['stable', 'beta'],
+    default: 'stable',
+    eli5: 'Whether to get stable releases (tested) or beta releases (new features but less tested).',
+    complex: 'Update channel for Claude Code: stable (production-ready releases) or beta (pre-release with new features).'
+  },
+  {
+    path: 'respectGitignore',
     section: 'general',
-    defaultValue: 'desktop'
+    label: 'Respect .gitignore',
+    type: 'toggle',
+    default: true,
+    eli5: 'Whether Claude should skip files listed in .gitignore (like node_modules or build artifacts).',
+    complex: 'When enabled, Claude respects .gitignore rules and excludes matched files/directories from context, analysis, and operations.'
+  },
+  {
+    path: 'showTurnDuration',
+    section: 'general',
+    label: 'Show Turn Duration',
+    type: 'toggle',
+    default: false,
+    eli5: 'Show how long each Claude response took to generate.',
+    complex: 'When enabled, displays the time taken for each agent turn/response, useful for performance monitoring and optimization.'
+  },
+  {
+    path: 'statusLine',
+    section: 'general',
+    label: 'Custom Status Line',
+    type: 'text',
+    default: '',
+    eli5: 'Custom text to show in the status line while Claude is working.',
+    complex: 'Custom status line format string. Can include variables for current task, model name, token usage, etc.'
+  },
+  {
+    path: 'plansDirectory',
+    section: 'general',
+    label: 'Plans Directory',
+    type: 'text',
+    default: '~/.claude/plans',
+    eli5: 'Where to save task plans and agent strategies.',
+    complex: 'Directory path where Claude saves generated plans, agent strategies, and conversation plans. Supports ~ for home directory.'
+  },
+  {
+    path: 'enableAllProjectMcpServers',
+    section: 'general',
+    label: 'Enable All Project MCP Servers',
+    type: 'toggle',
+    default: false,
+    eli5: 'Automatically enable all MCP servers defined in your project.',
+    complex: 'When enabled, automatically connects to and enables all MCP (Model Context Protocol) servers found in project configuration files.'
   },
 
-  'permissions.allow': {
-    label: 'Allowed Tools',
-    eli5: 'List of tools and operations Claude Code is allowed to use. For example: "bash", "file-write", "git-*".',
-    complex: 'Whitelist of allowed tool patterns using glob syntax. Supports wildcards. If empty, denies all unless explicitly allowed elsewhere.',
-    type: 'list',
-    section: 'permissions',
-    defaultValue: ['bash', 'file-read', 'file-write', 'git-*', 'npm-*']
-  },
-  'permissions.deny': {
-    label: 'Denied Tools',
-    eli5: 'List of tools Claude Code should never use. For example: "bash:rm", "git:push" to block dangerous commands.',
-    complex: 'Blacklist of denied tool patterns using glob syntax. Takes precedence over whitelist. Prevents execution of specified operations.',
-    type: 'list',
-    section: 'permissions',
-    defaultValue: ['bash:rm', 'bash:rmdir', 'git:push:force', 'git:reset:hard']
-  },
-
-  'env.ANTHROPIC_API_KEY': {
+  // ===== ENVIRONMENT SECTION =====
+  {
+    path: 'env.ANTHROPIC_API_KEY',
+    section: 'environment',
     label: 'Anthropic API Key',
-    eli5: 'Your API key from Anthropic to use Claude models. Get it from your Anthropic console.',
-    complex: 'Environment variable storing the authentication token for Anthropic Claude API access.',
     type: 'text',
-    section: 'environment',
-    defaultValue: ''
+    default: '',
+    eli5: 'Your API key from Anthropic for accessing Claude models. Get it from https://console.anthropic.com',
+    complex: 'Environment variable storing the authentication token for Anthropic Claude API access. Required for all API requests.'
   },
-  'env.CLAUDE_CODE_MAX_MEMORY': {
-    label: 'Max Memory Usage',
-    eli5: 'How much memory Claude Code can use. Set a limit to prevent your system from slowing down.',
-    complex: 'Environment variable limiting maximum memory consumption in MB. Prevents resource exhaustion on memory-constrained systems.',
-    type: 'number',
+  {
+    path: 'env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
     section: 'environment',
-    defaultValue: 2048
-  },
-  'env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC': {
     label: 'Disable Non-Essential Network Traffic',
-    eli5: 'Turn off optional network requests to save bandwidth and improve privacy.',
-    complex: 'Disables telemetry, analytics, and non-critical network communications while preserving core functionality.',
-    type: 'toggle',
-    section: 'environment',
-    defaultValue: false
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to disable optional network requests like telemetry and analytics.',
+    complex: 'Set to "1" to disable telemetry, analytics, and non-critical network communications while preserving core functionality. Accepts "0" or "1".'
   },
-  'env.CLAUDE_CODE_USE_BEDROCK': {
+  {
+    path: 'env.CLAUDE_CODE_USE_BEDROCK',
+    section: 'environment',
     label: 'Use AWS Bedrock',
-    eli5: 'Route requests through Amazon Bedrock instead of calling APIs directly.',
-    complex: 'Routes LLM requests through AWS Bedrock service instead of direct API endpoints. Requires AWS credentials.',
-    type: 'toggle',
-    section: 'environment',
-    defaultValue: false
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to route requests through Amazon Bedrock instead of calling Anthropic directly.',
+    complex: 'Set to "1" to route LLM requests through AWS Bedrock service instead of direct Anthropic API endpoints. Requires AWS credentials and Bedrock access.'
   },
-  'env.CLAUDE_CODE_USE_VERTEX': {
+  {
+    path: 'env.CLAUDE_CODE_USE_VERTEX',
+    section: 'environment',
     label: 'Use Google Vertex AI',
-    eli5: 'Route requests through Google Vertex AI instead of calling APIs directly.',
-    complex: 'Routes LLM requests through Google Vertex AI platform instead of direct API endpoints. Requires Google Cloud credentials.',
-    type: 'toggle',
-    section: 'environment',
-    defaultValue: false
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to route requests through Google Vertex AI instead of calling Anthropic directly.',
+    complex: 'Set to "1" to route LLM requests through Google Vertex AI platform instead of direct Anthropic API endpoints. Requires Google Cloud credentials and Vertex API access.'
   },
-  'env.CLAUDE_CODE_SKIP_CHROME_DOWNLOAD': {
+  {
+    path: 'env.CLAUDE_CODE_SKIP_CHROME_DOWNLOAD',
+    section: 'environment',
     label: 'Skip Chrome Download',
-    eli5: 'Skip downloading Chromium browser for web tasks. Use your system browser instead.',
-    complex: 'Skips Chromium binary download during setup. Useful when using system Chrome or headless environments.',
-    type: 'toggle',
-    section: 'environment',
-    defaultValue: false
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to skip downloading Chromium browser and use your system browser instead.',
+    complex: 'Set to "1" to skip automatic Chromium binary download during setup. Useful for headless environments or when using system-installed Chrome.'
   },
-  'env.DISABLE_PROMPT_CACHING': {
+  {
+    path: 'env.DISABLE_PROMPT_CACHING',
+    section: 'environment',
     label: 'Disable Prompt Caching',
-    eli5: 'Turn off caching of prompts to save money on API calls. Useful for testing but slower.',
-    complex: 'Disables prompt caching feature that reduces API costs. Useful for debugging or when consistent fresh evaluations are needed.',
-    type: 'toggle',
-    section: 'environment',
-    defaultValue: false
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to turn off prompt caching, which saves money on API calls but makes responses slower.',
+    complex: 'Set to "1" to disable prompt caching feature that reduces API costs. Useful for debugging or when consistent fresh evaluations are needed.'
   },
-  'env.DISABLE_AUTO_COMPACT': {
+  {
+    path: 'env.DISABLE_AUTO_COMPACT',
+    section: 'environment',
     label: 'Disable Auto Context Compaction',
-    eli5: 'Turn off automatic message compression. Disable this if you want to keep all conversation history.',
-    complex: 'Disables automatic context compaction when conversation approaches token limits. Useful for maintaining full history.',
-    type: 'toggle',
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to turn off automatic message compression and keep full conversation history.',
+    complex: 'Set to "1" to disable automatic context compaction when conversation approaches token limits. Preserves full conversation history at the cost of higher token usage.'
+  },
+  {
+    path: 'env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE',
     section: 'environment',
-    defaultValue: false
+    label: 'Auto-Compact Percentage Override',
+    type: 'text',
+    default: '',
+    eli5: 'Set the context usage percentage (e.g., "50") when automatic compaction kicks in. Leave blank to use default.',
+    complex: 'Override the context utilization percentage threshold for triggering automatic compaction. Example: "50" compacts when 50% of context is used.'
+  },
+  {
+    path: 'env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS',
+    section: 'environment',
+    label: 'Enable Experimental Agent Teams',
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to enable the experimental agent teams/swarm feature for parallel task execution.',
+    complex: 'Set to "1" to enable experimental multi-agent swarm mode where multiple Claude instances coordinate on complex tasks. Subject to change.'
   },
 
-  'hooks.PreToolUse': {
-    label: 'Pre-Tool Execution Hook',
-    eli5: 'A shell command that runs before Claude Code uses a tool. Use for validation or logging.',
-    complex: 'Custom shell command executed before any tool invocation. Can be used for pre-flight checks, logging, or security validation.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-  'hooks.PostToolUse': {
-    label: 'Post-Tool Execution Hook',
-    eli5: 'A shell command that runs after Claude Code finishes using a tool. Use for cleanup or logging.',
-    complex: 'Custom shell command executed after tool completion. Useful for cleanup, result validation, or post-processing.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-  'hooks.Notification': {
-    label: 'Notification Hook',
-    eli5: 'A shell command that runs when Claude Code sends a notification. Use for integrations with your notification system.',
-    complex: 'Custom shell command executed when notifications are triggered. Useful for forwarding to external notification systems.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-  'hooks.Stop': {
-    label: 'Agent Stop Hook',
-    eli5: 'A shell command that runs when Claude Code stops working. Use for cleanup or final logging.',
-    complex: 'Custom shell command executed when the agent stops. Useful for final cleanup, logging session end, or triggering workflows.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-  'hooks.SubagentStop': {
-    label: 'Subagent Stop Hook',
-    eli5: 'A shell command that runs when a subagent (helper agent) stops. Use for tracking subagent lifecycle.',
-    complex: 'Custom shell command executed when subagents terminate. Useful for multi-agent workflow monitoring and cleanup.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-
-  'security.enableScanning': {
-    label: 'Enable Security Scanning',
-    eli5: 'Automatically check code for security issues before running it.',
-    complex: 'Enables automated security scanning of code changes and tool inputs for vulnerabilities.',
-    type: 'toggle',
-    section: 'security',
-    defaultValue: true
-  },
-  'security.cveChecking': {
-    label: 'Check for Known Vulnerabilities',
-    eli5: 'Look up packages to see if they have known security problems.',
-    complex: 'Performs CVE (Common Vulnerabilities and Exposures) checking against known vulnerability databases.',
-    type: 'toggle',
-    section: 'security',
-    defaultValue: true
-  },
-  'security.threatModeling': {
-    label: 'Threat Modeling',
-    eli5: 'Analyze potential security risks in code and architecture.',
-    complex: 'Performs threat modeling analysis to identify potential attack vectors and security weaknesses.',
-    type: 'toggle',
-    section: 'security',
-    defaultValue: false
-  },
-  'security.auditLog': {
-    label: 'Enable Audit Logging',
-    eli5: 'Keep a record of all actions for security and accountability.',
-    complex: 'Maintains detailed audit logs of all tool executions, API calls, and security events for compliance and forensics.',
-    type: 'toggle',
-    section: 'security',
-    defaultValue: true
-  },
-
-  'swarm.enabled': {
-    label: 'Enable Agent Swarm',
-    eli5: 'Allow Claude Code to create helper agents to work on tasks in parallel.',
-    complex: 'Enables multi-agent swarm mode where multiple agent instances can coordinate on complex tasks.',
-    type: 'toggle',
-    section: 'swarm',
-    defaultValue: false
-  },
-  'swarm.topology': {
-    label: 'Swarm Network Topology',
-    eli5: 'How agents communicate: Star (one leader), Mesh (all connected), or Hierarchical (layered).',
-    complex: 'Network topology for agent communication and coordination. Star = centralized, Mesh = peer-to-peer, Hierarchical = layered.',
+  // ===== PERMISSIONS SECTION =====
+  {
+    path: 'permissions.defaultMode',
+    section: 'permissions',
+    label: 'Default Permission Mode',
     type: 'select',
-    options: ['star', 'mesh', 'hierarchical'],
-    section: 'swarm',
-    defaultValue: 'star'
+    options: ['default', 'acceptEdits', 'plan', 'dontAsk', 'bypassPermissions'],
+    default: 'default',
+    eli5: 'Default behavior for new permissions: ask (default), auto-accept edits, require plan approval, never ask again, or bypass all checks.',
+    complex: 'Default permission mode: "default" (always ask), "acceptEdits" (auto-approve file changes), "plan" (require plan approval), "dontAsk" (auto-approve), "bypassPermissions" (no checks).'
   },
-  'swarm.maxAgents': {
-    label: 'Maximum Swarm Size',
-    eli5: 'The maximum number of helper agents that can work together.',
-    complex: 'Limits the maximum number of concurrent agents in the swarm to prevent resource exhaustion.',
+  {
+    path: 'permissions.disableBypassPermissionsMode',
+    section: 'permissions',
+    label: 'Disable Bypass Permissions Mode',
+    type: 'toggle',
+    default: false,
+    eli5: 'When enabled, prevents the "bypass all checks" permission mode from being used.',
+    complex: 'When enabled, disables the "bypassPermissions" mode option, enforcing permission checks at all times for security compliance.'
+  },
+
+  // ===== PLUGINS SECTION =====
+  {
+    path: 'enabledPlugins',
+    section: 'plugins',
+    label: 'Enabled Plugins',
+    type: 'list',
+    default: [],
+    eli5: 'List of plugin package names that are currently enabled.',
+    complex: 'Array of plugin package identifiers that are enabled. Format: "scope/package-name" for scoped packages, "package-name" for unscoped.'
+  },
+  {
+    path: 'extraKnownMarketplaces',
+    section: 'plugins',
+    label: 'Extra Known Marketplaces',
+    type: 'list',
+    default: [],
+    eli5: 'Additional plugin marketplace URLs beyond the default ones.',
+    complex: 'Array of additional plugin marketplace URLs. Each should be a valid HTTPS URL to a compatible plugin registry.'
+  },
+  {
+    path: 'strictKnownMarketplaces',
+    section: 'plugins',
+    label: 'Strict Known Marketplaces',
+    type: 'toggle',
+    default: false,
+    eli5: 'When enabled, only allow plugins from known/approved marketplaces.',
+    complex: 'When enabled, restricts plugin installation to only known and explicitly approved marketplace sources for security.'
+  },
+  {
+    path: 'blockedMarketplaces',
+    section: 'plugins',
+    label: 'Blocked Marketplaces',
+    type: 'list',
+    default: [],
+    eli5: 'List of marketplace URLs that are blocked from being used.',
+    complex: 'Array of marketplace URLs to block. Prevents installation of plugins from these sources.'
+  },
+
+  // ===== SWARM SECTION =====
+  {
+    path: 'swarm.topology',
+    section: 'swarm',
+    label: 'Swarm Topology',
+    type: 'select',
+    options: ['hierarchical', 'mesh', 'ring', 'star', 'hybrid', 'adaptive'],
+    default: 'hierarchical',
+    eli5: 'How your AI agents are organized - like a tree, web, circle, or star pattern.',
+    complex: 'Agent team topology defining communication patterns and coordination structure.'
+  },
+  {
+    path: 'swarm.maxAgents',
+    section: 'swarm',
+    label: 'Max Agents',
     type: 'number',
-    section: 'swarm',
-    defaultValue: 5
+    default: 20,
+    eli5: 'Maximum number of AI helpers that can work at the same time.',
+    complex: 'Maximum concurrent agent instances in a swarm session. Higher values increase parallelism but consume more resources.'
   },
-  'swarm.teamName': {
+  {
+    path: 'swarm.teamName',
+    section: 'swarm',
     label: 'Team Name',
-    eli5: 'A name to identify your team of agents.',
-    complex: 'Identifier for the agent team used in logging, metrics, and team coordination.',
     type: 'text',
-    section: 'swarm',
-    defaultValue: 'default-team'
+    default: '',
+    eli5: 'A name for your team of AI agents.',
+    complex: 'Identifier for the agent team. Used in coordination, logging, and inter-agent communication.'
   },
-  'swarm.coordinationMode': {
-    label: 'Agent Coordination Mode',
-    eli5: 'How agents share work: Automatic (system decides), Manual (you direct them), or Hybrid.',
-    complex: 'Mode controlling how agents divide and coordinate work: automatic task distribution, manual assignment, or hybrid approach.',
-    type: 'select',
-    options: ['automatic', 'manual', 'hybrid'],
+  {
+    path: 'swarm.coordinationStrategy',
     section: 'swarm',
-    defaultValue: 'automatic'
+    label: 'Coordination Strategy',
+    type: 'select',
+    options: ['centralized', 'distributed', 'consensus'],
+    default: 'centralized',
+    eli5: 'How agents decide who does what - one boss, everyone decides, or they vote.',
+    complex: 'Task distribution strategy: centralized (single coordinator), distributed (peer-to-peer), or consensus (quorum-based decisions).'
+  },
+  {
+    path: 'swarm.autoScale',
+    section: 'swarm',
+    label: 'Auto Scale',
+    type: 'toggle',
+    default: false,
+    eli5: 'Automatically add or remove AI helpers based on how busy they are.',
+    complex: 'Enable automatic agent scaling based on task queue depth and resource utilization metrics.'
+  },
+  {
+    path: 'swarm.faultTolerance',
+    section: 'swarm',
+    label: 'Fault Tolerance',
+    type: 'toggle',
+    default: false,
+    eli5: 'Keep working even if some AI helpers crash or disconnect.',
+    complex: 'Enable fault-tolerant execution with automatic agent restart and task reassignment on failures.'
+  },
+  {
+    path: 'swarm.messageProtocol',
+    section: 'swarm',
+    label: 'Message Protocol',
+    type: 'select',
+    options: ['direct', 'broadcast', 'gossip'],
+    default: 'direct',
+    eli5: 'How agents talk to each other - one-on-one, announce to everyone, or spread the word gradually.',
+    complex: 'Inter-agent messaging protocol: direct (point-to-point), broadcast (all-to-all), or gossip (probabilistic dissemination).'
   },
 
-  'memory.backend': {
-    label: 'Memory Storage Backend',
-    eli5: 'Where to store memory: SQLite (persistent), JSON (simple), or Memory (temporary).',
-    complex: 'Storage backend for agent memory. SQLite provides persistence, JSON is portable, Memory is fastest but ephemeral.',
+  // ===== MEMORY SECTION =====
+  {
+    path: 'memory.backend',
+    section: 'memory',
+    label: 'Memory Backend',
     type: 'select',
-    options: ['sqlite', 'json', 'memory'],
-    section: 'memory',
-    defaultValue: 'sqlite'
+    options: ['sqlite', 'json', 'hybrid', 'memory'],
+    default: 'json',
+    eli5: 'Where to store AI memory - a database, files, both, or just in RAM.',
+    complex: 'Memory persistence backend: sqlite (structured DB), json (file-based), hybrid (both), or memory (in-process, non-persistent).'
   },
-  'memory.hnswEnabled': {
-    label: 'Enable HNSW Vector Search',
-    eli5: 'Use fast vector similarity search to find related memories quickly.',
-    complex: 'Enables HNSW (Hierarchical Navigable Small World) algorithm for efficient semantic memory retrieval.',
+  {
+    path: 'memory.hnswEnabled',
+    section: 'memory',
+    label: 'HNSW Enabled',
     type: 'toggle',
-    section: 'memory',
-    defaultValue: true
+    default: false,
+    eli5: 'Enable smart search that finds similar things quickly, like a librarian who knows exactly where every book is.',
+    complex: 'Enable HNSW (Hierarchical Navigable Small World) vector index for approximate nearest-neighbor search over memory embeddings.'
   },
-  'memory.retentionDays': {
-    label: 'Memory Retention Period',
-    eli5: 'How long to keep memories before automatically deleting them (in days).',
-    complex: 'Number of days to retain memory entries before automatic pruning. Set to 0 for indefinite retention.',
+  {
+    path: 'memory.hnswDimensions',
+    section: 'memory',
+    label: 'HNSW Dimensions',
     type: 'number',
-    section: 'memory',
-    defaultValue: 90
+    default: 384,
+    eli5: 'How detailed the AI\'s memory search is - higher means more precise but slower.',
+    complex: 'Dimensionality of HNSW vector embeddings. Common values: 384 (MiniLM), 768 (BERT-base), 1536 (OpenAI ada-002).'
   },
-  'memory.maxEntries': {
-    label: 'Maximum Memory Entries',
-    eli5: 'The maximum number of memories to store. Oldest ones are deleted when limit is reached.',
-    complex: 'Maximum number of memory entries to retain. When exceeded, oldest entries are pruned based on access patterns.',
+  {
+    path: 'memory.hnswM',
+    section: 'memory',
+    label: 'HNSW M Parameter',
     type: 'number',
+    default: 16,
+    eli5: 'How many connections each memory point has - more means better search but uses more space.',
+    complex: 'HNSW M parameter controlling the number of bi-directional links per node. Higher M improves recall at the cost of memory.'
+  },
+  {
+    path: 'memory.hnswEfConstruction',
     section: 'memory',
-    defaultValue: 10000
+    label: 'HNSW EF Construction',
+    type: 'number',
+    default: 200,
+    eli5: 'How carefully the memory index is built - higher means better quality but takes longer to set up.',
+    complex: 'HNSW efConstruction parameter controlling index build quality. Higher values produce better indices but increase construction time.'
   },
-  'memory.autoConsolidate': {
-    label: 'Auto Memory Consolidation',
-    eli5: 'Automatically merge related memories to keep memory organized and efficient.',
-    complex: 'Enables automatic consolidation of memory entries to form higher-level abstractions and maintain efficiency.',
-    type: 'toggle',
+  {
+    path: 'memory.retentionDays',
     section: 'memory',
-    defaultValue: true
+    label: 'Retention Days',
+    type: 'number',
+    default: 90,
+    eli5: 'How many days to keep memories before they expire.',
+    complex: 'Number of days to retain memory entries before automatic expiration and cleanup.'
   },
-
-  // === Claude Code Features ===
-  'apiProvider': {
-    label: 'API Provider',
-    eli5: 'Where to send AI requests: directly to Anthropic, through Amazon (Bedrock), or Google (Vertex).',
-    complex: 'API routing provider: direct Anthropic API, AWS Bedrock for enterprise AWS integration, or Google Vertex AI for GCP deployments.',
-    type: 'select',
-    options: ['anthropic', 'bedrock', 'vertex'],
-    section: 'general',
-    defaultValue: 'anthropic'
-  },
-  'contextWindow': {
-    label: 'Context Window Size',
-    eli5: 'How much conversation the AI can remember at once. Bigger = more context but costs more.',
-    complex: 'Maximum context window size in tokens. Determines how much conversation history and code context the model can process per request.',
-    type: 'select',
-    options: ['32000', '64000', '128000', '200000'],
-    section: 'general',
-    defaultValue: '128000'
-  },
-  'autoCompact': {
-    label: 'Auto Context Compaction',
-    eli5: 'Automatically shrink old messages when the conversation gets too long.',
-    complex: 'Enables automatic conversation compaction when approaching context window limits. Summarizes older messages to preserve recent context.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-  'promptCaching': {
-    label: 'Prompt Caching',
-    eli5: 'Cache repeated parts of prompts to save money and speed things up.',
-    complex: 'Enables Anthropic prompt caching to reduce API costs by caching static prompt prefixes. Can reduce costs by up to 90% for repeated contexts.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-  'webSearchEnabled': {
-    label: 'Enable Web Search',
-    eli5: 'Let the AI search the internet to find up-to-date information.',
-    complex: 'Enables real-time web search capability for accessing information beyond the model training cutoff date.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-  'theme': {
-    label: 'Theme',
-    eli5: 'Choose how the interface looks: dark mode or light mode.',
-    complex: 'UI theme preference. Dark theme optimized for low-light environments, light theme for high-ambient-light conditions.',
-    type: 'select',
-    options: ['dark', 'light', 'system'],
-    section: 'general',
-    defaultValue: 'dark'
-  },
-  'telemetryEnabled': {
-    label: 'Telemetry',
-    eli5: 'Send anonymous usage data to help improve the product.',
-    complex: 'Controls anonymous telemetry data collection for product improvement. No personal data or code content is transmitted.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-  'autoUpdates': {
-    label: 'Auto Updates',
-    eli5: 'Automatically download and install updates.',
-    complex: 'Enables automatic update checking and installation for Claude Code and ruflo components.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-  'terminalIntegration': {
-    label: 'Terminal Integration',
-    eli5: 'Integrate with your terminal for a seamless coding experience.',
-    complex: 'Enables terminal shell integration for inline completions, command suggestions, and context-aware terminal operations.',
-    type: 'toggle',
-    section: 'general',
-    defaultValue: true
-  },
-
-  // === Model Routing ===
-  'modelRouting.planningModel': {
-    label: 'Planning Model',
-    eli5: 'The smartest model used for planning and architecture (costs more but thinks better).',
-    complex: 'Model assigned to planning, architecture design, and complex reasoning tasks. Should be highest-capability tier.',
-    type: 'select',
-    options: ['claude-opus-4-6', 'gpt-4', 'gemini-ultra'],
-    section: 'general',
-    defaultValue: 'claude-opus-4-6'
-  },
-  'modelRouting.codingModel': {
-    label: 'Coding Model',
-    eli5: 'The everyday model used for writing and fixing code.',
-    complex: 'Model assigned to code generation, bug fixing, and moderate-complexity development tasks. Balanced cost/capability.',
-    type: 'select',
-    options: ['claude-sonnet-4-6', 'gpt-4-turbo', 'gemini-pro'],
-    section: 'general',
-    defaultValue: 'claude-sonnet-4-6'
-  },
-  'modelRouting.reviewModel': {
-    label: 'Review Model',
-    eli5: 'The model that checks your code for bugs and improvements.',
-    complex: 'Model assigned to code review, security analysis, and quality assessment tasks.',
-    type: 'select',
-    options: ['claude-sonnet-4-6', 'claude-opus-4-6', 'gpt-4-turbo'],
-    section: 'general',
-    defaultValue: 'claude-sonnet-4-6'
-  },
-  'modelRouting.boilerplateModel': {
-    label: 'Boilerplate Model',
-    eli5: 'The cheapest, fastest model for simple repetitive code.',
-    complex: 'Model assigned to boilerplate generation, formatting, and trivial code operations. Optimized for throughput and cost.',
-    type: 'select',
-    options: ['claude-haiku-4-5', 'gpt-3.5-turbo', 'gemini-flash'],
-    section: 'general',
-    defaultValue: 'claude-haiku-4-5'
-  },
-
-  // === Ruflo Swarm Extensions ===
-  'swarm.agentTypes': {
-    label: 'Available Agent Types',
-    eli5: 'The different kinds of helper agents available in your swarm.',
-    complex: 'Configurable list of agent types available for spawning. Includes general-purpose, Explore, Plan, Bash, code-reviewer, security-reviewer, tdd-guide, etc.',
-    type: 'list',
-    section: 'swarm',
-    defaultValue: ['general-purpose', 'Explore', 'Plan', 'Bash', 'code-reviewer', 'security-reviewer', 'tdd-guide']
-  },
-  'swarm.planModeRequired': {
-    label: 'Require Plan Approval',
-    eli5: 'Make agents create a plan and get your approval before coding.',
-    complex: 'When enabled, spawned agents must operate in plan mode and receive approval before executing implementation changes.',
-    type: 'toggle',
-    section: 'swarm',
-    defaultValue: false
-  },
-  'swarm.delegateMode': {
-    label: 'Agent Delegate Mode',
-    eli5: 'Let agents pass tasks to other agents when they need help.',
-    complex: 'Enables agent delegation where agents can spawn sub-agents or reassign tasks based on specialization requirements.',
-    type: 'toggle',
-    section: 'swarm',
-    defaultValue: true
-  },
-
-  // === Ruflo Memory Extensions ===
-  'memory.vectorDimension': {
-    label: 'Vector Dimension',
-    eli5: 'Size of the numbers used to represent memories (bigger = more detail but slower).',
-    complex: 'Dimensionality of embedding vectors for HNSW index. Higher dimensions capture more semantic detail but increase storage and computation.',
-    type: 'select',
-    options: ['256', '512', '768', '1024', '1536'],
+  {
+    path: 'memory.consolidationInterval',
     section: 'memory',
-    defaultValue: '768'
+    label: 'Consolidation Interval (Hours)',
+    type: 'number',
+    default: 24,
+    eli5: 'How often (in hours) to organize and clean up memories.',
+    complex: 'Hours between automatic memory consolidation runs that merge, deduplicate, and optimize stored entries.'
   },
-  'memory.embeddingModel': {
-    label: 'Embedding Model',
-    eli5: 'The model that converts text into searchable numbers for memory.',
-    complex: 'Model used for generating vector embeddings from text content for semantic similarity search.',
-    type: 'select',
-    options: ['text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'],
+  {
+    path: 'memory.maxSizeMB',
     section: 'memory',
-    defaultValue: 'text-embedding-3-small'
+    label: 'Max Size (MB)',
+    type: 'number',
+    default: 500,
+    eli5: 'Maximum storage space for memories in megabytes.',
+    complex: 'Maximum memory store size in MB. When exceeded, oldest entries are evicted based on LRU policy.'
   },
-  'memory.autoLearn': {
-    label: 'Auto Learning',
-    eli5: 'Automatically learn patterns from your interactions to get smarter.',
-    complex: 'Enables automatic pattern extraction and instinct learning from completed interactions using continuous learning algorithms.',
-    type: 'toggle',
+  {
+    path: 'memory.path',
     section: 'memory',
-    defaultValue: true
-  },
-
-  // === Ruflo Hook Extensions ===
-  'hooks.PrePromptSubmit': {
-    label: 'Pre-Prompt Submit Hook',
-    eli5: 'A command that runs before your message is sent to the AI.',
-    complex: 'Shell command executed before user prompts are submitted. Can modify, validate, or block prompt submission.',
+    label: 'Memory Path',
     type: 'text',
-    section: 'hooks',
-    defaultValue: ''
+    default: '~/.claude/memory',
+    eli5: 'Where on your computer to store the AI\'s memories.',
+    complex: 'Filesystem path for memory storage directory. Supports ~ for home directory expansion.'
   },
-  'hooks.PostPromptSubmit': {
-    label: 'Post-Prompt Submit Hook',
-    eli5: 'A command that runs after your message is sent to the AI.',
-    complex: 'Shell command executed after prompt submission. Useful for logging, analytics, or triggering dependent workflows.',
-    type: 'text',
-    section: 'hooks',
-    defaultValue: ''
-  },
-
-  // === Ruflo Security Extensions ===
-  'security.sandboxMode': {
-    label: 'Sandbox Mode',
-    eli5: 'Run code in a protected sandbox so it can\'t affect your real files.',
-    complex: 'Enables process-level sandboxing with syscall filtering, filesystem restrictions, and network isolation for safe code execution.',
-    type: 'select',
-    options: ['off', 'permissive', 'strict'],
-    section: 'security',
-    defaultValue: 'permissive'
-  },
-  'security.allowedDomains': {
-    label: 'Allowed Network Domains',
-    eli5: 'Which websites and APIs the AI is allowed to connect to.',
-    complex: 'Whitelist of domains for network egress. Restricts outbound connections to specified domains for security compliance.',
-    type: 'list',
-    section: 'security',
-    defaultValue: ['api.anthropic.com', 'api.openai.com', 'github.com', 'registry.npmjs.org']
-  },
-  'security.networkRestrictions': {
-    label: 'Network Restriction Level',
-    eli5: 'How strictly to control internet access: none, moderate, or full lockdown.',
-    complex: 'Network restriction level: none (all traffic allowed), moderate (domain whitelist), strict (air-gapped, no external connections).',
-    type: 'select',
-    options: ['none', 'moderate', 'strict'],
-    section: 'security',
-    defaultValue: 'none'
-  },
-
-  // === MCP Configuration ===
-  'mcpServers.enabled': {
-    label: 'Enable MCP Servers',
-    eli5: 'Turn on the ability to connect external tool servers.',
-    complex: 'Enables Model Context Protocol server connections for extending agent capabilities with external tools and services.',
+  {
+    path: 'memory.autoConsolidate',
+    section: 'memory',
+    label: 'Auto Consolidate',
     type: 'toggle',
-    section: 'general',
-    defaultValue: true
+    default: false,
+    eli5: 'Automatically organize and compress memories to save space.',
+    complex: 'Enable automatic memory consolidation that periodically merges and optimizes stored memory entries.'
+  },
+
+  // ===== MODELS SECTION =====
+  {
+    path: 'modelTiers.primary.provider',
+    section: 'models',
+    label: 'Primary Model Provider',
+    type: 'select',
+    options: ['anthropic', 'openai', 'google', 'cohere', 'ollama'],
+    default: 'anthropic',
+    eli5: 'Which AI company to use for your main/primary model.',
+    complex: 'Primary model tier provider. Determines the API endpoint and available models for primary inference.'
+  },
+  {
+    path: 'modelTiers.primary.model',
+    section: 'models',
+    label: 'Primary Model',
+    type: 'text',
+    default: 'claude-sonnet-4-6',
+    eli5: 'Which specific AI model to use as your main model.',
+    complex: 'Primary model identifier. Must be a valid model ID for the selected provider.'
+  },
+  {
+    path: 'modelTiers.secondary.provider',
+    section: 'models',
+    label: 'Secondary Model Provider',
+    type: 'select',
+    options: ['anthropic', 'openai', 'google', 'cohere', 'ollama'],
+    default: 'anthropic',
+    eli5: 'Which AI company to use as a backup model.',
+    complex: 'Secondary model tier provider for fallback or cost-optimized routing.'
+  },
+  {
+    path: 'modelTiers.secondary.model',
+    section: 'models',
+    label: 'Secondary Model',
+    type: 'text',
+    default: 'claude-haiku-4-5-20251001',
+    eli5: 'Which specific AI model to use as your backup.',
+    complex: 'Secondary model identifier for fallback routing.'
+  },
+  {
+    path: 'modelTiers.fallback.provider',
+    section: 'models',
+    label: 'Fallback Model Provider',
+    type: 'select',
+    options: ['anthropic', 'openai', 'google', 'cohere', 'ollama'],
+    default: 'anthropic',
+    eli5: 'Last-resort AI company if the main and backup aren\'t available.',
+    complex: 'Fallback model tier provider used when primary and secondary are unavailable or rate-limited.'
+  },
+  {
+    path: 'modelTiers.fallback.model',
+    section: 'models',
+    label: 'Fallback Model',
+    type: 'text',
+    default: 'claude-haiku-4-5-20251001',
+    eli5: 'Last-resort AI model.',
+    complex: 'Fallback model identifier.'
+  },
+  {
+    path: 'modelTiers.routing.strategy',
+    section: 'models',
+    label: 'Routing Strategy',
+    type: 'select',
+    options: ['cost', 'performance', 'balanced'],
+    default: 'balanced',
+    eli5: 'How to choose between models - save money, go fast, or a mix of both.',
+    complex: 'Model routing strategy: cost (minimize spend), performance (minimize latency), or balanced (optimize cost-performance ratio).'
+  },
+  {
+    path: 'modelTiers.routing.maxCostPerRequest',
+    section: 'models',
+    label: 'Max Cost Per Request',
+    type: 'number',
+    default: 0,
+    eli5: 'Maximum amount to spend on a single AI request (0 = no limit).',
+    complex: 'Maximum cost in USD per request. Requests exceeding this threshold are routed to cheaper models. 0 disables the limit.'
+  },
+
+  // ===== SECURITY SECTION (ADDITIONAL) =====
+  {
+    path: 'security.cveScanning',
+    section: 'security',
+    label: 'CVE Scanning',
+    type: 'toggle',
+    default: false,
+    eli5: 'Automatically check your code for known security vulnerabilities.',
+    complex: 'Enable automated CVE (Common Vulnerabilities and Exposures) scanning against the NVD database for dependencies and generated code.'
+  },
+  {
+    path: 'security.auditLogging',
+    section: 'security',
+    label: 'Audit Logging',
+    type: 'toggle',
+    default: false,
+    eli5: 'Keep a log of everything the AI does for security review.',
+    complex: 'Enable comprehensive audit logging of all agent actions, tool invocations, and file modifications.'
+  },
+  {
+    path: 'security.auditLogPath',
+    section: 'security',
+    label: 'Audit Log Path',
+    type: 'text',
+    default: '~/.claude/audit.log',
+    eli5: 'Where to save the security audit log file.',
+    complex: 'Filesystem path for audit log output. Supports ~ for home directory. Log format: JSON Lines (JSONL).'
+  },
+  {
+    path: 'security.piiDetection',
+    section: 'security',
+    label: 'PII Detection',
+    type: 'toggle',
+    default: false,
+    eli5: 'Detect and warn about personal information (names, emails, etc.) in your code.',
+    complex: 'Enable PII (Personally Identifiable Information) detection that scans agent outputs for sensitive data patterns (SSN, email, phone, etc.).'
+  },
+  {
+    path: 'security.threatModeling',
+    section: 'security',
+    label: 'Threat Modeling',
+    type: 'toggle',
+    default: false,
+    eli5: 'Have the AI analyze potential security threats in your project.',
+    complex: 'Enable automated threat modeling analysis that identifies STRIDE-category threats in architecture and generated code.'
+  },
+
+  // ===== CONTEXT SECTION =====
+  {
+    path: 'contextAutopilot.enabled',
+    section: 'context',
+    label: 'Context Autopilot Enabled',
+    type: 'toggle',
+    default: false,
+    eli5: 'Automatically manage conversation length so Claude doesn\'t forget things.',
+    complex: 'Enable context autopilot that automatically manages context window utilization including auto-compaction.'
+  },
+  {
+    path: 'contextAutopilot.compactThreshold',
+    section: 'context',
+    label: 'Compact Threshold (%)',
+    type: 'number',
+    default: 80,
+    eli5: 'How full the conversation can get (percentage) before automatic cleanup.',
+    complex: 'Context utilization percentage threshold (50-95) that triggers automatic compaction. Lower values compact more aggressively.'
+  },
+  {
+    path: 'contextAutopilot.strategy',
+    section: 'context',
+    label: 'Compaction Strategy',
+    type: 'select',
+    options: ['aggressive', 'balanced', 'conservative'],
+    default: 'balanced',
+    eli5: 'How aggressively to compress old conversation - aggressive saves space, conservative keeps more detail.',
+    complex: 'Compaction strategy: aggressive (heavy summarization, max space), balanced (moderate), conservative (minimal loss, less space savings).'
+  },
+
+  // ===== VERIFICATION SECTION =====
+  {
+    path: 'verification.enabled',
+    section: 'verification',
+    label: 'Verification Enabled',
+    type: 'toggle',
+    default: false,
+    eli5: 'Makes Claude double-check its work before giving you answers.',
+    complex: 'Enable the verification system that validates agent outputs against truth scoring criteria.'
+  },
+  {
+    path: 'verification.truthThreshold',
+    section: 'verification',
+    label: 'Truth Threshold',
+    type: 'number',
+    default: 0.7,
+    eli5: 'How confident the AI needs to be before accepting its own answer (0-1, higher = stricter).',
+    complex: 'Minimum truth score (0.0-1.0) required for verification pass. Outputs below this threshold trigger re-evaluation.'
+  },
+  {
+    path: 'verification.environment',
+    section: 'verification',
+    label: 'Verification Environment',
+    type: 'select',
+    options: ['development', 'staging', 'production'],
+    default: 'development',
+    eli5: 'Which environment you\'re working in - production is strictest.',
+    complex: 'Verification environment that determines threshold adjustments: development (relaxed), staging (moderate), production (strict).'
+  },
+
+  // ===== TEMPLATES SECTION =====
+  {
+    path: 'claudemd.templatePath',
+    section: 'templates',
+    label: 'CLAUDE.md Template Path',
+    type: 'text',
+    default: '',
+    eli5: 'Path to a custom CLAUDE.md template file for your project.',
+    complex: 'Filesystem path to a custom CLAUDE.md template. When set, this template is used as the base for project-level agent instructions.'
+  },
+  {
+    path: 'claudemd.autoGenerate',
+    section: 'templates',
+    label: 'Auto Generate CLAUDE.md',
+    type: 'toggle',
+    default: false,
+    eli5: 'Automatically create a CLAUDE.md file for new projects.',
+    complex: 'Enable automatic CLAUDE.md generation when initializing Claude Code in a new project directory.'
+  },
+
+  // ===== DIAGNOSTICS SECTION =====
+  {
+    path: 'diagnostics.verboseLogging',
+    section: 'diagnostics',
+    label: 'Verbose Logging',
+    type: 'toggle',
+    default: false,
+    eli5: 'Show detailed logs for debugging when things go wrong.',
+    complex: 'Enable verbose logging output for troubleshooting. Increases log verbosity across all subsystems.'
+  },
+  {
+    path: 'diagnostics.healthCheckInterval',
+    section: 'diagnostics',
+    label: 'Health Check Interval (Seconds)',
+    type: 'number',
+    default: 60,
+    eli5: 'How often (in seconds) to check if everything is working.',
+    complex: 'Interval in seconds between automated health check probes for configured providers and MCP servers.'
+  },
+
+  // ===== ENVIRONMENT SECTION (ADDITIONAL) =====
+  {
+    path: 'env.CLAUDE_FLOW_HOOKS_ENABLED',
+    section: 'environment',
+    label: 'Claude Flow Hooks Enabled',
+    type: 'text',
+    default: '0',
+    eli5: 'Set to "1" to enable workflow hooks for automating tasks.',
+    complex: 'Set to "1" to enable claude-flow hooks system for pre/post task automation.'
+  },
+  {
+    path: 'env.CLAUDE_FLOW_MEMORY_BACKEND',
+    section: 'environment',
+    label: 'Claude Flow Memory Backend',
+    type: 'text',
+    default: '',
+    eli5: 'Override which memory storage system to use.',
+    complex: 'Override memory backend selection. Values: "sqlite", "json", "memory". Empty uses default.'
+  },
+  {
+    path: 'env.CLAUDE_FLOW_MEMORY_PATH',
+    section: 'environment',
+    label: 'Claude Flow Memory Path',
+    type: 'text',
+    default: '',
+    eli5: 'Override where memories are stored on disk.',
+    complex: 'Override memory storage path. Empty uses default (~/.claude/memory).'
+  },
+  {
+    path: 'env.PROMPT_CACHING_ENABLED',
+    section: 'environment',
+    label: 'Prompt Caching Enabled',
+    type: 'text',
+    default: '1',
+    eli5: 'Set to "1" to enable prompt caching for faster, cheaper responses.',
+    complex: 'Set to "1" to enable prompt caching. Caches repeated prompt prefixes to reduce latency and cost.'
+  },
+  {
+    path: 'env.CLAUDE_CODE_MAX_TURNS',
+    section: 'environment',
+    label: 'Max Turns Per Session',
+    type: 'text',
+    default: '',
+    eli5: 'Maximum number of back-and-forth exchanges per session.',
+    complex: 'Maximum agentic turns per session. Empty uses default. Higher values allow longer autonomous operation.'
+  },
+  {
+    path: 'env.CLAUDE_FLOW_SWARM_TOPOLOGY',
+    section: 'environment',
+    label: 'Swarm Topology Override',
+    type: 'text',
+    default: '',
+    eli5: 'Override the agent team organization pattern.',
+    complex: 'Override swarm topology. Values: "hierarchical", "mesh", "ring", "star", "hybrid", "adaptive".'
+  },
+  {
+    path: 'env.CLAUDE_FLOW_MAX_AGENTS',
+    section: 'environment',
+    label: 'Max Agents Override',
+    type: 'text',
+    default: '',
+    eli5: 'Override the maximum number of AI agents.',
+    complex: 'Override maximum concurrent agents. Empty uses default (20).'
+  },
+  {
+    path: 'env.OLLAMA_HOST',
+    section: 'environment',
+    label: 'Ollama Host URL',
+    type: 'text',
+    default: '',
+    eli5: 'URL for your local Ollama AI server (if using local models).',
+    complex: 'Ollama server URL for local model inference. Example: "http://localhost:11434".'
+  },
+  {
+    path: 'env.OPENAI_API_KEY',
+    section: 'environment',
+    label: 'OpenAI API Key',
+    type: 'text',
+    default: '',
+    eli5: 'Your OpenAI API key for using GPT models.',
+    complex: 'OpenAI API authentication key. Required when using OpenAI models as primary/secondary/fallback.'
+  },
+  {
+    path: 'env.GOOGLE_AI_API_KEY',
+    section: 'environment',
+    label: 'Google AI API Key',
+    type: 'text',
+    default: '',
+    eli5: 'Your Google AI API key for using Gemini models.',
+    complex: 'Google AI (Gemini) API key. Required when using Google models as primary/secondary/fallback.'
+  },
+  {
+    path: 'env.MAX_THINKING_TOKENS',
+    section: 'environment',
+    label: 'Max Thinking Tokens',
+    type: 'text',
+    default: '',
+    eli5: 'How many tokens the AI can use for "thinking" before responding.',
+    complex: 'Maximum tokens allocated for extended thinking/reasoning. Higher values allow deeper analysis at increased cost.'
   }
-};
+];
 
 export { SETTINGS_META };
 
 export function getSettingMeta(path) {
-  return SETTINGS_META[path] || null;
+  return SETTINGS_META.find(setting => setting.path === path) || null;
 }
 
 export function getSettingsBySection(section) {
-  return Object.entries(SETTINGS_META)
-    .filter(([_, meta]) => meta.section === section)
-    .map(([path, meta]) => ({ path, ...meta }));
+  return SETTINGS_META.filter(setting => setting.section === section);
 }
 
 export function getSections() {
   const sections = new Set();
-  Object.values(SETTINGS_META).forEach(meta => {
-    sections.add(meta.section);
+  SETTINGS_META.forEach(setting => {
+    sections.add(setting.section);
   });
   return Array.from(sections).sort();
 }

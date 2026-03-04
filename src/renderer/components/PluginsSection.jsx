@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { PLUGIN_PACKS } from '../lib/plugins';
+import { getAddonRealSettings } from '../lib/settings-mapper';
 
-export default function PluginsSection({ settings, mode }) {
+export default function PluginsSection({ settings, mode, onUpdate }) {
   const [installingPack, setInstallingPack] = useState(null);
-  const [installedPacks, setInstalledPacks] = useState(settings.plugins?.installed || []);
-
   const [installError, setInstallError] = useState(null);
+  const [locallyInstalled, setLocallyInstalled] = useState([]);
+
+  const settingsInstalled = settings.plugins?.installed || [];
+  const installedPacks = [...new Set([...settingsInstalled, ...locallyInstalled])];
 
   const handleInstall = async (pack) => {
     setInstallingPack(pack.id);
@@ -13,7 +16,14 @@ export default function PluginsSection({ settings, mode }) {
     try {
       const result = await window.electronAPI.installAddon(pack.installCommand);
       if (result && result.success) {
-        setInstalledPacks((prev) => [...prev, pack.id]);
+        setLocallyInstalled(prev => [...prev, pack.id]);
+        onUpdate('plugins.installed', [...installedPacks, pack.id]);
+        // Apply real Claude Code settings for all included addons
+        pack.includedAddons.forEach((addonId) => {
+          getAddonRealSettings(addonId).forEach(({ path, value }) => {
+            onUpdate(path, value);
+          });
+        });
       } else {
         setInstallError(pack.id);
         console.error('Failed to install pack:', result?.error || 'Unknown error');
