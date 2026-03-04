@@ -115,6 +115,7 @@ export default function EnvVarsSection({ settings, mode, onUpdate }) {
               type="text"
               value={newVarName}
               onChange={(e) => setNewVarName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddEnvVar()}
               placeholder="Variable name (e.g., OPENAI_API_KEY)"
               className="mb-2"
             />
