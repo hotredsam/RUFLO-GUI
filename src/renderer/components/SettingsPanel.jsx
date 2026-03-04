@@ -40,7 +40,7 @@ export default function SettingsPanel({ settings, mode, section, onUpdate }) {
           <input
             type="number"
             value={value ?? ''}
-            onChange={(e) => onUpdate(setting.path, e.target.value ? parseFloat(e.target.value) : null)}
+            onChange={(e) => onUpdate(setting.path, e.target.value ? parseFloat(e.target.value) : undefined)}
             min={setting.min}
             max={setting.max}
           />
