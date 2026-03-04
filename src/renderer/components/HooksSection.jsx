@@ -31,6 +31,8 @@ export default function HooksSection({ settings, mode, onUpdate }) {
   const [newHookType, setNewHookType] = useState('PreToolUse');
   const [newHookActionType, setNewHookActionType] = useState('command');
   const [newHookMatcher, setNewHookMatcher] = useState('');
+  const [newHookHeadersError, setNewHookHeadersError] = useState(null);
+  const [entryHeaderErrors, setEntryHeaderErrors] = useState({});
 
   // Command fields
   const [newHookCommand, setNewHookCommand] = useState('');
@@ -60,6 +62,7 @@ export default function HooksSection({ settings, mode, onUpdate }) {
     setNewHookHttpTimeout('');
     setNewHookPrompt('');
     setNewHookAgent('');
+    setNewHookHeadersError(null);
   };
 
   const buildHookObject = () => {
@@ -78,8 +81,9 @@ export default function HooksSection({ settings, mode, onUpdate }) {
         if (newHookHeaders.trim()) {
           try {
             hookObj.headers = JSON.parse(newHookHeaders);
+            setNewHookHeadersError(null);
           } catch {
-            alert('Invalid JSON in headers');
+            setNewHookHeadersError('Invalid JSON in headers');
             return null;
           }
         }
@@ -157,15 +161,18 @@ export default function HooksSection({ settings, mode, onUpdate }) {
       entry.hooks = [{ ...hook, method: value }];
     } else if (field === 'headers') {
       const hookCopy = { ...hook };
+      const errKey = `${hookTypeId}-${entryIndex}`;
       if (value.trim()) {
         try {
           hookCopy.headers = JSON.parse(value);
+          setEntryHeaderErrors(prev => { const n = { ...prev }; delete n[errKey]; return n; });
         } catch {
-          alert('Invalid JSON in headers');
+          setEntryHeaderErrors(prev => ({ ...prev, [errKey]: 'Invalid JSON' }));
           return;
         }
       } else {
         delete hookCopy.headers;
+        setEntryHeaderErrors(prev => { const n = { ...prev }; delete n[errKey]; return n; });
       }
       entry.hooks = [hookCopy];
     } else if (field === 'httpTimeout') {
@@ -311,6 +318,9 @@ export default function HooksSection({ settings, mode, onUpdate }) {
                                     className="font-mono text-sm"
                                     rows="3"
                                   />
+                                  {entryHeaderErrors[`${hookType.id}-${idx}`] && (
+                                    <p className="text-xs text-red-400 mt-1">{entryHeaderErrors[`${hookType.id}-${idx}`]}</p>
+                                  )}
                                 </div>
                                 <div>
                                   <label className="block text-xs font-medium text-slate-400 mb-1">Timeout (ms)</label>
@@ -478,11 +488,14 @@ export default function HooksSection({ settings, mode, onUpdate }) {
                   <label className="block text-xs font-medium text-slate-400 mb-2">Headers (JSON, optional)</label>
                   <textarea
                     value={newHookHeaders}
-                    onChange={(e) => setNewHookHeaders(e.target.value)}
+                    onChange={(e) => { setNewHookHeaders(e.target.value); setNewHookHeadersError(null); }}
                     placeholder='{"Authorization": "Bearer token"}'
                     className="font-mono text-sm"
                     rows="3"
                   />
+                  {newHookHeadersError && (
+                    <p className="text-xs text-red-400 mt-1">{newHookHeadersError}</p>
+                  )}
                 </div>
               </>
             )}
